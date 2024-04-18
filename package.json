@@ -6,21 +6,35 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:push": "drizzle-kit push:pg"
   },
   "dependencies": {
+    "@clerk/nextjs": "^4.29.12",
+    "@clerk/themes": "^1.7.12",
+    "@neondatabase/serverless": "^0.9.1",
+    "@next/env": "^14.2.2",
+    "@paralleldrive/cuid2": "^2.2.2",
+    "drizzle-orm": "^0.30.8",
+    "lucide-react": "^0.371.0",
+    "next": "14.2.2",
+    "pusher": "^5.2.0",
+    "pusher-js": "8.4.0-rc2",
     "react": "^18",
     "react-dom": "^18",
-    "next": "14.2.2"
+    "swr": "^2.2.5",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
-    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "drizzle-kit": "^0.20.14",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.2",
+    "pg": "^8.11.5",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.2"
+    "typescript": "^5"
   }
 }
