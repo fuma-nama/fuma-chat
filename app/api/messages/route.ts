@@ -8,6 +8,7 @@ import { currentUser } from "@clerk/nextjs";
 import { validate } from "@/lib/server/route-handler";
 import { getMessages, postMessage } from "@/lib/server/zod";
 import { eq } from "drizzle-orm";
+import { clerkClient } from "@clerk/nextjs/server";
 
 export async function GET(req: NextRequest) {
   const result = await validate(req, getMessages, "params");
@@ -18,16 +19,29 @@ export async function GET(req: NextRequest) {
     .from(messageTable)
     .where(eq(messageTable.channelId, result.data.channelId));
 
-  console.log(result.data.channelId);
+  const list = await clerkClient.users.getUserList({
+    userId: messages.map((m) => m.userId),
+  });
+
+  const userMap = new Map(list.map((u) => [u.id, u]));
 
   return NextResponse.json<GET["/api/messages"]["data"]>(
-    messages.map((message) => ({
-      id: message.id,
-      channelId: result.data.channelId,
-      user: message.userId,
-      message: message.content,
-      timestamp: message.timestamp.getTime(),
-    }))
+    messages.flatMap((message) => {
+      const user = userMap.get(message.userId);
+      if (!user) return [];
+
+      return {
+        id: message.id,
+        channelId: result.data.channelId,
+        user: {
+          id: message.userId,
+          imageUrl: user.imageUrl,
+          name: `${user.firstName} ${user.lastName}`,
+        },
+        message: message.content,
+        timestamp: message.timestamp.getTime(),
+      };
+    })
   );
 }
 
@@ -48,7 +62,11 @@ export async function POST(req: NextRequest) {
 
   await pusher.trigger(result.data.channelId, "my-event", {
     id,
-    user: user.id,
+    user: {
+      id: user.id,
+      imageUrl: user.imageUrl,
+      name: `${user.firstName} ${user.lastName}`,
+    },
     message: result.data.message,
     channelId: result.data.channelId,
     timestamp: Date.now(),

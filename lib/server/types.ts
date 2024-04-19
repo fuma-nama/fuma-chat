@@ -10,7 +10,11 @@ export interface Realtime {
 export interface Message {
   id: string;
   channelId: string;
-  user: string;
+  user: {
+    id: string;
+    imageUrl: string;
+    name: string;
+  };
   message: string;
   timestamp: number;
 }

@@ -46,7 +46,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             key={channel.id}
             href={`/channels/${channel.id}`}
             className={cn(
-              "rounded-lg text-neutral-50 font-medium text-sm px-4 py-3 -mx-2",
+              "rounded-lg text-neutral-50 font-medium text-sm p-4 -mx-2",
               channelId === channel.id ? "bg-blue-500" : "hover:bg-neutral-800"
             )}
           >
