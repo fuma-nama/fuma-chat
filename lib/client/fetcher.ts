@@ -14,9 +14,7 @@ export function useQuery<K extends keyof GET>(
 ) {
   return useSWR<GET[K]["data"], Error, [K, GET[K]["params"]]>(
     [key, init?.params as GET[K]["params"]],
-    async (input) => {
-      return await fetcher(input[0], init);
-    },
+    (input) => fetcher(input[0], init),
     config
   );
 }
@@ -25,9 +23,7 @@ export async function fetcher<T>(
   path: string,
   { params, ...init }: FetcherOptions = {}
 ): Promise<T> {
-  const res = await fetch(`${path}?${new URLSearchParams(params)}`, {
-    ...init,
-  });
+  const res = await fetch(`${path}?${new URLSearchParams(params)}`, init);
 
   if (res.ok) {
     const data: T = await res.json();

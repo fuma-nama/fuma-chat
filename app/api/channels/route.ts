@@ -1,22 +1,20 @@
 import { channelTable, memberTable } from "@/lib/database/schema";
 import { db } from "@/lib/server/db";
-import { validate } from "@/lib/server/route-handler";
+import { requireUser, validate } from "@/lib/server/route-handler";
 import { GET, POST } from "@/lib/server/types";
 import { postChannel } from "@/lib/server/zod";
-import { currentUser } from "@clerk/nextjs";
 import { createId } from "@paralleldrive/cuid2";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
-  const user = await currentUser();
-  if (!user)
-    return NextResponse.json({ message: "not logged in" }, { status: 401 });
+  const auth = await requireUser();
+  if (!auth.success) return auth.response;
 
   const result = await db
     .select({ channel: channelTable })
     .from(memberTable)
-    .where(eq(memberTable.userId, user.id))
+    .where(eq(memberTable.userId, auth.user.id))
     .innerJoin(channelTable, eq(channelTable.id, memberTable.channelId));
 
   return NextResponse.json<GET["/api/channels"]["data"]>(
@@ -28,9 +26,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await currentUser();
-  if (!user)
-    return NextResponse.json({ message: "not logged in" }, { status: 401 });
+  const auth = await requireUser();
+  if (!auth.success) return auth.response;
   const result = await validate(req, postChannel);
   if (!result.success) return result.response;
 
@@ -38,11 +35,11 @@ export async function POST(req: NextRequest) {
   await db.insert(channelTable).values({
     id,
     name: result.data.name,
-    ownerId: user.id,
+    ownerId: auth.user.id,
   });
   await db.insert(memberTable).values({
     channelId: id,
-    userId: user.id,
+    userId: auth.user.id,
   });
 
   return NextResponse.json<POST["/api/channels"]["data"]>(id);

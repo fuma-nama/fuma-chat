@@ -1,3 +1,5 @@
+import { currentUser } from "@clerk/nextjs";
+import { User } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import type { z } from "zod";
 
@@ -36,6 +38,29 @@ export async function validate<T extends z.AnyZodObject>(
     response: NextResponse.json(
       { message: result.error.message },
       { status: 400 }
+    ),
+  };
+}
+
+type RequireUser =
+  | {
+      success: true;
+      user: User;
+    }
+  | {
+      success: false;
+      response: NextResponse;
+    };
+
+export async function requireUser(): Promise<RequireUser> {
+  const user = await currentUser();
+  if (user) return { success: true, user };
+
+  return {
+    success: false,
+    response: NextResponse.json(
+      { message: "You must be logged in to perform this action" },
+      { status: 401 }
     ),
   };
 }
