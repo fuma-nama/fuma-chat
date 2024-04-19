@@ -4,5 +4,5 @@ import { Message } from "../server/types";
 
 export const useStore = create(() => ({
   pusher: undefined as Pusher | undefined,
-  messages: [] as Message[],
+  messages: new Map<string, Message[]>(),
 }));

@@ -8,10 +8,47 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-conic":
-          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+      keyframes: {
+        "dialog-in": {
+          from: {
+            opacity: "0",
+            transform: "translate(-50%, -70%) scale(0.9)",
+          },
+          to: {
+            transform: "translate(-50%, -50%) scale(1)",
+          },
+        },
+        "dialog-out": {
+          from: {
+            transform: "translate(-50%, -50%)",
+          },
+          to: {
+            opacity: "0",
+            transform: "translate(-50%, -70%) scale(0.9)",
+          },
+        },
+        "fade-in": {
+          from: {
+            opacity: "0",
+          },
+          to: {
+            opacity: "1",
+          },
+        },
+        "fade-out": {
+          from: {
+            opacity: "1",
+          },
+          to: {
+            opacity: "0",
+          },
+        },
+      },
+      animation: {
+        "dialog-in": "dialog-in 200ms ease-out",
+        "dialog-out": "dialog-out 200ms ease-out",
+        "overlay-in": "fade-in 200ms ease-out",
+        "overlay-out": "fade-out 200ms ease-out",
       },
     },
   },

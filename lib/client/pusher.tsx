@@ -4,11 +4,34 @@ import React from "react";
 import Pusher from "pusher-js";
 import { useEffect } from "react";
 import { useStore } from "./store";
-import { Schema } from "../server/types";
+import { Realtime } from "../server/types";
+import { useQuery } from "./fetcher";
 
 const appId = process.env.NEXT_PUBLIC_PUSHER_API_KEY!;
 
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
+  const query = useQuery("/api/channels", undefined);
+
+  useEffect(() => {
+    const data = query.data;
+    const pusher = useStore.getState().pusher;
+    if (!pusher || !data) return;
+
+    for (const item of data) {
+      const channel = pusher.subscribe(item.id);
+      channel.unbind_all();
+
+      channel.bind("my-event", (data: Realtime["channel"]["my-event"]) => {
+        useStore.setState((prev) => ({
+          messages: new Map(prev.messages).set(item.id, [
+            ...(prev.messages.get(item.id) ?? []),
+            data,
+          ]),
+        }));
+      });
+    }
+  }, [query.data]);
+
   useEffect(() => {
     const pusher = useStore.getState().pusher;
     if (pusher) return;
@@ -27,12 +50,6 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
 function init(pusher: Pusher) {
   const channel = pusher.subscribe("my-channel");
-
-  channel.bind("my-event", (data: Schema["channel"]["my-event"]) => {
-    useStore.setState((prev) => ({
-      messages: [...prev.messages, data],
-    }));
-  });
 }
 
 export function usePusher(): Pusher | undefined {
