@@ -27,6 +27,24 @@ const config: Config = {
             transform: "translate(-50%, -70%) scale(0.9)",
           },
         },
+        "popover-in": {
+          from: {
+            opacity: "0",
+            transform: "translateY(20px)",
+          },
+          to: {
+            transform: "translateY(0)",
+          },
+        },
+        "popover-out": {
+          from: {
+            transform: "translateY(0)",
+          },
+          to: {
+            opacity: "0",
+            transform: "translateY(20px)",
+          },
+        },
         "fade-in": {
           from: {
             opacity: "0",
@@ -49,6 +67,8 @@ const config: Config = {
         "dialog-out": "dialog-out 200ms ease-out",
         "overlay-in": "fade-in 200ms ease-out",
         "overlay-out": "fade-out 200ms ease-out",
+        "popover-in": "popover-in 200ms ease-out",
+        "popover-out": "popover-out 200ms ease-out",
       },
     },
   },

@@ -6,10 +6,12 @@ import { useEffect } from "react";
 import { useStore } from "./store";
 import { Realtime } from "../server/types";
 import { useQuery } from "./fetcher";
+import { useUser } from "@clerk/nextjs";
 
 const appId = process.env.NEXT_PUBLIC_PUSHER_API_KEY!;
 
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
+  const auth = useUser();
   const query = useQuery("/api/channels", undefined);
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const pusher = useStore.getState().pusher;
-    if (pusher) return;
+    if (pusher || !auth.isSignedIn) return;
 
     const instance = new Pusher(appId, {
       cluster: "us3",
@@ -43,14 +45,12 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     init(instance);
 
     useStore.setState({ pusher: instance });
-  }, []);
+  }, [auth]);
 
   return <>{children}</>;
 }
 
-function init(pusher: Pusher) {
-  const channel = pusher.subscribe("my-channel");
-}
+function init(pusher: Pusher) {}
 
 export function usePusher(): Pusher | undefined {
   return useStore((s) => s.pusher);

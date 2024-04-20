@@ -3,12 +3,14 @@
 import { SendIcon } from "lucide-react";
 import { useState } from "react";
 import { useStore } from "@/lib/client/store";
-import { typedPoster, useQuery } from "@/lib/client/fetcher";
+import { typedFetch, useQuery } from "@/lib/client/fetcher";
 import useSWRMutation from "swr/mutation";
 import { cn } from "@/lib/cn";
 import { inputVariants } from "@/components/primitive";
 import Image from "next/image";
-import type { Channel } from "@/lib/server/types";
+import type { Channel, Message } from "@/lib/server/types";
+import { useAuth } from "@clerk/nextjs";
+import { EditGroup } from "@/components/function/edit-group";
 
 export default function View({
   params,
@@ -19,6 +21,7 @@ export default function View({
 }) {
   const [value, setValue] = useState("");
   const messages = useStore((s) => s.messages.get(params.channel) ?? []);
+  const auth = useAuth();
 
   useQuery(
     "/api/messages",
@@ -37,7 +40,7 @@ export default function View({
   const mutation = useSWRMutation(
     ["/api/messages", { channelId: params.channel }] as const,
     ([key, params], { arg }: { arg: string }) =>
-      typedPoster(key, {
+      typedFetch(`${key}:post`, {
         bodyJson: { channelId: params.channelId, message: arg },
       }),
     {
@@ -45,31 +48,18 @@ export default function View({
     }
   );
 
+  if (!auth.isLoaded)
+    return <p className="m-auto text-sm text-neutral-400">Loading</p>;
+
   return (
     <>
       <div className="sticky top-0 flex flex-row items-center px-4 bg-neutral-900/50 backdrop-blur-lg min-h-12">
-        <p className="font-medium">{channelInfo.name}</p>
+        <p className="font-medium text-sm">{channelInfo.name}</p>
+        <EditGroup channel={channelInfo} />
       </div>
       <div className="flex flex-col gap-6 py-4">
         {messages.map((message) => (
-          <div
-            key={message.id}
-            className="flex flex-row gap-2 p-4 text-sm mx-4 rounded-xl bg-neutral-800/50 max-w-[70%]"
-          >
-            <Image
-              alt="avatar"
-              src={message.user.imageUrl}
-              width={32}
-              height={32}
-              className="rounded-full size-8 min-w-8 mt-1"
-              unoptimized
-            />
-            <div>
-              <p className="font-medium mb-2">{message.user.name}</p>
-
-              <p>{message.message}</p>
-            </div>
-          </div>
+          <MessageItem key={message.id} message={message} />
         ))}
       </div>
       <div className="sticky bottom-0 flex flex-row items-center bg-neutral-900/50 px-4 pb-4 mt-auto gap-2 backdrop-blur-lg">
@@ -90,5 +80,39 @@ export default function View({
         </button>
       </div>
     </>
+  );
+}
+
+function MessageItem({ message }: { message: Message }) {
+  const auth = useAuth();
+
+  if (auth.userId === message.user.id) {
+    return (
+      <div className="flex flex-row gap-2 ms-auto me-4 max-w-[70%]">
+        <p className="p-2 rounded-xl bg-blue-500 text-sm">{message.message}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-row gap-2 ms-4 max-w-[70%]">
+      <Image
+        alt="avatar"
+        src={message.user.imageUrl}
+        width={32}
+        height={32}
+        className="rounded-full size-8 min-w-8 mt-auto"
+        unoptimized
+      />
+      <div>
+        <p className="text-xs text-neutral-400 px-2 mb-1">
+          {message.user.name}
+        </p>
+
+        <p className="p-2 rounded-xl bg-neutral-800 text-sm">
+          {message.message}
+        </p>
+      </div>
+    </div>
   );
 }

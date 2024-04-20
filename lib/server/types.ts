@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getMessages, postChannel, postMessage } from "./zod";
+import { deleteChannel, getMessages, postChannel, postMessage } from "./zod";
 
 export interface Realtime {
   channel: {
@@ -46,3 +46,18 @@ export interface POST {
     data: string;
   };
 }
+
+export interface DELETE {
+  "/api/channels": {
+    params: z.infer<typeof deleteChannel>;
+    data: { message: string };
+  };
+}
+
+export type API = {
+  [K in keyof GET as K extends string ? `${K}:get` : never]: GET[K];
+} & {
+  [K in keyof POST as K extends string ? `${K}:post` : never]: POST[K];
+} & {
+  [K in keyof DELETE as K extends string ? `${K}:delete` : never]: DELETE[K];
+};

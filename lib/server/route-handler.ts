@@ -1,24 +1,13 @@
 import { currentUser } from "@clerk/nextjs";
-import { User } from "@clerk/nextjs/server";
+import { User, auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import type { z } from "zod";
-
-type Result<T> =
-  | {
-      success: true;
-      data: T;
-    }
-  | {
-      success: false;
-      error: z.ZodError;
-      response: NextResponse;
-    };
 
 export async function validate<T extends z.AnyZodObject>(
   req: NextRequest,
   schema: T,
   type: "body" | "params" = "body"
-): Promise<Result<z.infer<T>>> {
+): Promise<z.infer<T>> {
   const content =
     type === "body"
       ? await req.json()
@@ -26,41 +15,52 @@ export async function validate<T extends z.AnyZodObject>(
   const result = schema.safeParse(content);
 
   if (result.success) {
-    return {
-      success: true,
-      data: result.data,
-    };
+    return result.data;
   }
 
-  return {
-    success: false,
-    error: result.error,
-    response: NextResponse.json(
-      { message: result.error.message },
-      { status: 400 }
-    ),
+  throw NextResponse.json(
+    { message: result.error.message, error: result.error },
+    { status: 400 }
+  );
+}
+
+export type HandlerFn<T> = (
+  req: NextRequest,
+  ctx: { params: unknown }
+) =>
+  | NextResponse<T | { message: string }>
+  | Promise<NextResponse<T | { message: string }>>;
+
+export function handler<T>(fn: HandlerFn<T>): HandlerFn<any> {
+  return async (req: NextRequest, ctx: { params: unknown }) => {
+    try {
+      return fn(req, ctx);
+    } catch (e) {
+      if (e instanceof NextResponse) {
+        return e;
+      }
+
+      throw e;
+    }
   };
 }
 
-type RequireUser =
-  | {
-      success: true;
-      user: User;
-    }
-  | {
-      success: false;
-      response: NextResponse;
-    };
-
-export async function requireUser(): Promise<RequireUser> {
+export async function requireUser(): Promise<User> {
   const user = await currentUser();
-  if (user) return { success: true, user };
+  if (user) return user;
 
-  return {
-    success: false,
-    response: NextResponse.json(
-      { message: "You must be logged in to perform this action" },
-      { status: 401 }
-    ),
-  };
+  throw NextResponse.json(
+    { message: "You must be logged in to perform this action" },
+    { status: 401 }
+  );
+}
+
+export function requireAuth(): { userId: string } {
+  const user = auth();
+  if (user.userId) return { userId: user.userId };
+
+  throw NextResponse.json(
+    { message: "You must be logged in to perform this action" },
+    { status: 401 }
+  );
 }

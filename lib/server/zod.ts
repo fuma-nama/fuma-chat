@@ -12,3 +12,7 @@ export const getMessages = z.strictObject({
 export const postChannel = z.strictObject({
   name: z.string().trim().min(1).max(255),
 });
+
+export const deleteChannel = z.strictObject({
+  channelId: z.string(),
+});

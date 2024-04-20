@@ -1,5 +1,9 @@
-import useSWR, { SWRConfiguration } from "swr";
-import type { GET, POST } from "../server/types";
+import useSWR, { type Key as SWRKey, type SWRConfiguration } from "swr";
+import type { API, GET } from "../server/types";
+import useSWRMutation, {
+  MutationFetcher,
+  SWRMutationConfiguration,
+} from "swr/mutation";
 
 interface FetcherOptions<
   Params extends Record<string, string> = Record<string, string>
@@ -19,6 +23,26 @@ export function useQuery<K extends keyof GET>(
   );
 }
 
+export function useMutation<
+  DataKey extends keyof API,
+  Key extends SWRKey,
+  Data,
+  ExtraArg = never
+>(
+  key: Key,
+  _dataKey: DataKey,
+  fetcher: MutationFetcher<Data, Key, ExtraArg>,
+  config: SWRMutationConfiguration<
+    Data,
+    Error,
+    Key,
+    ExtraArg,
+    API[DataKey]["data"]
+  >
+) {
+  return useSWRMutation(key, fetcher, config);
+}
+
 export async function fetcher<T>(
   path: string,
   { params, ...init }: FetcherOptions = {}
@@ -26,27 +50,27 @@ export async function fetcher<T>(
   const res = await fetch(`${path}?${new URLSearchParams(params)}`, init);
 
   if (res.ok) {
-    const data: T = await res.json();
-    return data;
+    return await res.json();
   }
 
   const { message } = await res.json();
   throw new Error(message as string);
 }
 
-export async function typedFetcher<K extends keyof GET>(
+export async function typedFetch<K extends keyof API>(
   key: K,
-  init?: FetcherOptions<GET[K]["params"]>
-): Promise<GET[K]["data"]> {
-  return fetcher(key, init);
-}
+  init?: FetcherOptions<
+    API[K] extends { params: infer P extends Record<string, string> }
+      ? P
+      : never
+  > & {
+    bodyJson?: API[K] extends { body: infer B } ? B : never;
+  }
+): Promise<API[K]["data"]> {
+  const [api, method] = key.split(":");
 
-export async function typedPoster<K extends keyof POST>(
-  key: K,
-  init?: FetcherOptions<never> & { bodyJson?: POST[K]["body"] }
-): Promise<POST[K]["data"]> {
-  return fetcher(key, {
-    method: "POST",
+  return fetcher(api, {
+    method,
     body: init?.bodyJson ? JSON.stringify(init.bodyJson) : undefined,
     ...init,
   });

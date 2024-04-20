@@ -12,11 +12,11 @@ import {
 } from "../dialog";
 import { buttonVariants, inputVariants } from "../primitive";
 import useSWRMutation from "swr/mutation";
-import { typedPoster } from "@/lib/client/fetcher";
+import { typedFetch } from "@/lib/client/fetcher";
 import { useState } from "react";
 
 export function CreateGroup() {
-    const [open,setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
@@ -49,14 +49,14 @@ function Form({ close }: { close: () => void }) {
   const mutation = useSWRMutation(
     ["/api/channels", undefined] as const,
     ([key], { arg }: { arg: string }) =>
-      typedPoster(key, {
+      typedFetch(`${key}:post`, {
         bodyJson: { name: arg },
       }),
-      {
-        onSuccess() {
-            close()
-        }
-      }
+    {
+      onSuccess() {
+        close();
+      },
+    }
   );
 
   return (
