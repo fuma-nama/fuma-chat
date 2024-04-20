@@ -1,9 +1,5 @@
-import useSWR, { type Key as SWRKey, type SWRConfiguration } from "swr";
+import useSWR, { type SWRConfiguration } from "swr";
 import type { API, GET } from "../server/types";
-import useSWRMutation, {
-  MutationFetcher,
-  SWRMutationConfiguration,
-} from "swr/mutation";
 
 interface FetcherOptions<
   Params extends Record<string, string> = Record<string, string>
@@ -21,26 +17,6 @@ export function useQuery<K extends keyof GET>(
     (input) => fetcher(input[0], init),
     config
   );
-}
-
-export function useMutation<
-  DataKey extends keyof API,
-  Key extends SWRKey,
-  Data,
-  ExtraArg = never
->(
-  key: Key,
-  _dataKey: DataKey,
-  fetcher: MutationFetcher<Data, Key, ExtraArg>,
-  config: SWRMutationConfiguration<
-    Data,
-    Error,
-    Key,
-    ExtraArg,
-    API[DataKey]["data"]
-  >
-) {
-  return useSWRMutation(key, fetcher, config);
 }
 
 export async function fetcher<T>(

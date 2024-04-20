@@ -11,9 +11,9 @@ import {
   DialogClose,
 } from "../dialog";
 import { buttonVariants, inputVariants } from "../primitive";
-import useSWRMutation from "swr/mutation";
 import { typedFetch } from "@/lib/client/fetcher";
 import { useState } from "react";
+import { useMutation } from "@/lib/client/use-mutation";
 
 export function CreateGroup() {
   const [open, setOpen] = useState(false);
@@ -46,13 +46,13 @@ export function CreateGroup() {
 
 function Form({ close }: { close: () => void }) {
   const [name, setName] = useState("");
-  const mutation = useSWRMutation(
-    ["/api/channels", undefined] as const,
-    ([key], { arg }: { arg: string }) =>
-      typedFetch(`${key}:post`, {
-        bodyJson: { name: arg },
+  const mutation = useMutation(
+    ({ name }: { name: string }) =>
+      typedFetch("/api/channels:post", {
+        bodyJson: { name },
       }),
     {
+      mutateKey: ["/api/channels", undefined] as const,
       onSuccess() {
         close();
       },
@@ -63,7 +63,7 @@ function Form({ close }: { close: () => void }) {
     <form
       className="flex flex-col gap-2"
       onSubmit={(e) => {
-        mutation.trigger(name);
+        mutation.trigger({ name });
         e.preventDefault();
       }}
     >

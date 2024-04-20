@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { deleteChannel, getMessages, postChannel, postMessage } from "./zod";
+import {
+  deleteChannel,
+  getMembers,
+  getMessages,
+  postChannel,
+  postMessage,
+} from "./zod";
 
 export interface Realtime {
   channel: {
@@ -7,14 +13,21 @@ export interface Realtime {
   };
 }
 
+export interface User {
+  id: string;
+  imageUrl: string;
+  name: string;
+}
+
+export interface Member {
+  user: User;
+  permissions: number;
+}
+
 export interface Message {
   id: string;
   channelId: string;
-  user: {
-    id: string;
-    imageUrl: string;
-    name: string;
-  };
+  user: User;
   message: string;
   timestamp: number;
 }
@@ -29,10 +42,13 @@ export interface GET {
     params: z.infer<typeof getMessages>;
     data: Message[];
   };
-
   "/api/channels": {
     params: never;
     data: Channel[];
+  };
+  "/api/members": {
+    params: z.infer<typeof getMembers>;
+    data: Member[];
   };
 }
 

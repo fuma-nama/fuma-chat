@@ -16,3 +16,7 @@ export const postChannel = z.strictObject({
 export const deleteChannel = z.strictObject({
   channelId: z.string(),
 });
+
+export const getMembers = z.strictObject({
+  channelId: z.string(),
+});

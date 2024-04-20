@@ -25,9 +25,9 @@ export const channelTable = pgTable("channels", {
 export const memberTable = pgTable(
   "members",
   {
-    userId: varchar("user_id", { length: 256 }),
-    channelId: varchar("channel_id", { length: 256 }),
-    permissions: integer("permissions").default(0),
+    userId: varchar("user_id", { length: 256 }).notNull(),
+    channelId: varchar("channel_id", { length: 256 }).notNull(),
+    permissions: integer("permissions").default(0).notNull(),
   },
   (table) => ({
     pk: primaryKey({
