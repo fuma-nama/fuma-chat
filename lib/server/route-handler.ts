@@ -34,7 +34,7 @@ export type HandlerFn<T> = (
 export function handler<T>(fn: HandlerFn<T>): HandlerFn<any> {
   return async (req: NextRequest, ctx: { params: unknown }) => {
     try {
-      return fn(req, ctx);
+      return await fn(req, ctx);
     } catch (e) {
       if (e instanceof NextResponse) {
         return e;

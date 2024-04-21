@@ -3,13 +3,22 @@ import { GET } from "../server/types";
 import { mutate as swrMutate, useIsomorphicLayoutEffect } from "swr/_internal";
 
 export interface Config<K extends keyof GET, Data> {
+  /**
+   * The key to mutate (SWR)
+   */
   mutateKey: [K, GET[K]["params"] | undefined];
 
+  /**
+   * Customise the process of mutation
+   */
   mutate?: (
     key: [K, GET[K]["params"] | undefined],
     data: Data
   ) => void | Promise<void>;
 
+  /**
+   * Populate the cache
+   */
   cache?: (
     data: Data,
     currentData: GET[K]["data"] | undefined
