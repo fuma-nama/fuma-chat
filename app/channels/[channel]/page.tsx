@@ -16,9 +16,5 @@ export default async function Page({
 
   if (channelInfo.length === 0) notFound();
 
-  return (
-    <>
-      <View channelInfo={channelInfo[0]} params={params} />
-    </>
-  );
+  return <View channelInfo={channelInfo[0]} params={params} />;
 }
