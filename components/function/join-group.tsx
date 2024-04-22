@@ -1,19 +1,20 @@
-import { cn } from "@/lib/cn";
-import {
-  DialogHeader,
-  DialogFooter,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-  DialogClose,
-} from "../dialog";
-import { buttonVariants, inputVariants } from "../primitive";
-import { typedFetch } from "@/lib/client/fetcher";
-import { useState } from "react";
 import { useMutation } from "@/lib/client/use-mutation";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../dialog";
+import { useState } from "react";
+import { typedFetch } from "@/lib/client/fetcher";
+import { cn } from "@/lib/cn";
+import { inputVariants, buttonVariants } from "../primitive";
+import { useRouter } from "next/navigation";
 
-export function CreateGroup({
+export function JoinGroup({
   open,
   setOpen,
 }: {
@@ -24,9 +25,9 @@ export function CreateGroup({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New Group</DialogTitle>
+          <DialogTitle>Join Group</DialogTitle>
           <DialogDescription>
-            Chat Group allows you to talk to other group members.
+            Join a chat group with its invite code.
           </DialogDescription>
         </DialogHeader>
         <Form close={() => setOpen(false)} />
@@ -36,15 +37,18 @@ export function CreateGroup({
 }
 
 function Form({ close }: { close: () => void }) {
-  const [name, setName] = useState("");
+  const [code, setCode] = useState("");
+  const router = useRouter();
+
   const mutation = useMutation(
-    ({ name }: { name: string }) =>
-      typedFetch("/api/channels:post", {
-        bodyJson: { name },
+    ({ code }: { code: string }) =>
+      typedFetch("/api/channels/join:post", {
+        bodyJson: { code },
       }),
     {
       mutateKey: ["/api/channels", undefined] as const,
-      onSuccess() {
+      onSuccess(channelId) {
+        router.push(`/channels/${channelId}`);
         close();
       },
     }
@@ -54,26 +58,32 @@ function Form({ close }: { close: () => void }) {
     <form
       className="flex flex-col gap-2"
       onSubmit={(e) => {
-        mutation.trigger({ name });
+        mutation.trigger({ code: code });
         e.preventDefault();
       }}
     >
-      <label htmlFor="name" className="text-xs font-medium">
-        Name
+      <label htmlFor="code" className="text-xs font-medium">
+        Code
       </label>
       <input
-        id="name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        id="code"
+        value={code}
+        required
+        aria-required
+        aria-errormessage={mutation.error?.message}
+        onChange={(e) => setCode(e.target.value)}
         className={cn(inputVariants())}
       />
+      {mutation.error && (
+        <p className="text-red-400 text-xs">{mutation.error.message}</p>
+      )}
       <DialogFooter>
         <button
           type="submit"
           disabled={mutation.isMutating}
           className={cn(buttonVariants({ color: "primary" }))}
         >
-          Done
+          Join
         </button>
         <DialogClose className={cn(buttonVariants())}>Cancel</DialogClose>
       </DialogFooter>

@@ -7,15 +7,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/dropdown";
 import { CreateGroup } from "@/components/function/create-group";
+import { JoinGroup } from "@/components/function/join-group";
+import { buttonVariants } from "@/components/primitive";
 import { useQuery } from "@/lib/client/fetcher";
 import { cn } from "@/lib/cn";
 import { useClerk, useUser } from "@clerk/nextjs";
-import { LogOutIcon, UserIcon } from "lucide-react";
+import { LogOutIcon, PlusIcon, UserIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState } from "react";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  const [createGroup, setCreateGroup] = useState(false);
+  const [joinGroup, setJoinGroup] = useState(false);
   const { signOut, openUserProfile } = useClerk();
   const { user } = useUser();
   const query = useQuery("/api/channels");
@@ -67,7 +72,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {channel.name}
           </Link>
         ))}
-        <CreateGroup />
+        <CreateGroup open={createGroup} setOpen={setCreateGroup} />
+        <JoinGroup open={joinGroup} setOpen={setJoinGroup} />
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label="New Chat"
+            className={cn(
+              buttonVariants({
+                color: "secondary",
+                size: "icon",
+                className: "absolute right-4 bottom-4",
+              })
+            )}
+          >
+            <PlusIcon />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onSelect={() => setCreateGroup(true)}>
+              Create Group
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setJoinGroup(true)}>
+              Join Group
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <div className="flex flex-col flex-1 overflow-auto">{children}</div>
     </main>

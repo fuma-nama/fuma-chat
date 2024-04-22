@@ -4,7 +4,9 @@ import {
   getMembers,
   getMessages,
   postChannel,
+  getInvite,
   postMessage,
+  postChannelJoin,
 } from "./zod";
 
 export interface Realtime {
@@ -50,6 +52,10 @@ export interface GET {
     params: z.infer<typeof getMembers>;
     data: Member[];
   };
+  "/api/invites": {
+    params: z.infer<typeof getInvite>;
+    data: string;
+  };
 }
 
 export interface POST {
@@ -59,6 +65,13 @@ export interface POST {
   };
   "/api/channels": {
     body: z.infer<typeof postChannel>;
+    data: string;
+  };
+  "/api/channels/join": {
+    body: z.infer<typeof postChannelJoin>;
+    /**
+     * Channel Id
+     */
     data: string;
   };
 }

@@ -31,7 +31,7 @@ export type HandlerFn<T> = (
   | NextResponse<T | { message: string }>
   | Promise<NextResponse<T | { message: string }>>;
 
-export function handler<T>(fn: HandlerFn<T>): HandlerFn<any> {
+export function handler<T>(fn: HandlerFn<T>): HandlerFn<unknown> {
   return async (req: NextRequest, ctx: { params: unknown }) => {
     try {
       return await fn(req, ctx);

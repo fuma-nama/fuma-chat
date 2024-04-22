@@ -16,6 +16,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useMutation } from "@/lib/client/use-mutation";
+import { Invite } from "./invite";
 
 export function EditGroup({ channel }: { channel: Channel }) {
   const [open, setOpen] = useState(false);
@@ -69,6 +70,7 @@ export function EditGroup({ channel }: { channel: Channel }) {
             {member.user.name}
           </div>
         ))}
+        <Invite channelId={channel.id} />
         <DialogFooter>
           <button
             className={cn(buttonVariants({ color: "danger" }))}

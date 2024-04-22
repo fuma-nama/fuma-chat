@@ -37,4 +37,9 @@ export const memberTable = pgTable(
   })
 );
 
+export const inviteTable = pgTable("invites", {
+  channelId: varchar("channel_id", { length: 256 }).notNull(),
+  code: varchar("code", { length: 256 }).primaryKey(),
+});
+
 export type MessageTable = InferInsertModel<typeof messageTable>;

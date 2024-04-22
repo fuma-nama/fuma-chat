@@ -1,4 +1,4 @@
-import { channelTable, memberTable } from "@/lib/database/schema";
+import { channelTable, memberTable, messageTable } from "@/lib/database/schema";
 import { db } from "@/lib/server/db";
 import {
   handler,
@@ -72,7 +72,13 @@ export const DELETE = handler<API["/api/channels:delete"]["data"]>(
       );
     }
 
+    await db
+      .delete(memberTable)
+      .where(eq(memberTable.channelId, data.channelId));
     await db.delete(channelTable).where(eq(channelTable.id, data.channelId));
+    await db
+      .delete(messageTable)
+      .where(eq(memberTable.channelId, data.channelId));
 
     return NextResponse.json({
       message: "successful",
