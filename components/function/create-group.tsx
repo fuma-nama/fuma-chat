@@ -40,7 +40,7 @@ function Form({ close }: { close: () => void }) {
   const mutation = useMutation(
     ({ name }: { name: string }) =>
       typedFetch("/api/channels:post", {
-        bodyJson: { name },
+        name,
       }),
     {
       mutateKey: ["/api/channels", undefined] as const,
@@ -64,9 +64,14 @@ function Form({ close }: { close: () => void }) {
       <input
         id="name"
         value={name}
+        aria-invalid={mutation.error !== undefined}
+        required
         onChange={(e) => setName(e.target.value)}
         className={cn(inputVariants())}
       />
+      {mutation.error && (
+        <p className="text-red-400 text-xs">{mutation.error.message}</p>
+      )}
       <DialogFooter>
         <button
           type="submit"

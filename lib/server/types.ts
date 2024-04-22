@@ -41,34 +41,34 @@ export interface Channel {
 
 export interface GET {
   "/api/messages": {
-    params: z.infer<typeof getMessages>;
+    input: z.infer<typeof getMessages>;
     data: Message[];
   };
   "/api/channels": {
-    params: never;
+    input: undefined;
     data: Channel[];
   };
   "/api/members": {
-    params: z.infer<typeof getMembers>;
+    input: z.infer<typeof getMembers>;
     data: Member[];
   };
   "/api/invites": {
-    params: z.infer<typeof getInvite>;
+    input: z.infer<typeof getInvite>;
     data: string;
   };
 }
 
 export interface POST {
   "/api/messages": {
-    body: z.infer<typeof postMessage>;
+    input: z.infer<typeof postMessage>;
     data: string;
   };
   "/api/channels": {
-    body: z.infer<typeof postChannel>;
+    input: z.infer<typeof postChannel>;
     data: string;
   };
   "/api/channels/join": {
-    body: z.infer<typeof postChannelJoin>;
+    input: z.infer<typeof postChannelJoin>;
     /**
      * Channel Id
      */
@@ -78,7 +78,7 @@ export interface POST {
 
 export interface DELETE {
   "/api/channels": {
-    params: z.infer<typeof deleteChannel>;
+    input: z.infer<typeof deleteChannel>;
     data: { message: string };
   };
 }

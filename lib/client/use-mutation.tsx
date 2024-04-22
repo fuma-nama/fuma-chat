@@ -1,18 +1,19 @@
 import { useCallback, useRef, useState } from "react";
-import { GET } from "../server/types";
+import type { GET } from "../server/types";
 import { mutate as swrMutate, useIsomorphicLayoutEffect } from "swr/_internal";
+import { parseError, type FetcherError } from "./fetcher";
 
-export interface Config<K extends keyof GET, Data> {
+export interface Config<K extends keyof GET, Data, ErrorType> {
   /**
    * The key to mutate (SWR)
    */
-  mutateKey: [K, GET[K]["params"] | undefined];
+  mutateKey: [K, GET[K]["input"] | undefined];
 
   /**
    * Customise the process of mutation
    */
   mutate?: (
-    key: [K, GET[K]["params"] | undefined],
+    key: [K, GET[K]["input"] | undefined],
     data: Data
   ) => void | Promise<void>;
 
@@ -29,8 +30,8 @@ export interface Config<K extends keyof GET, Data> {
    */
   revalidate?: boolean;
 
-  onSuccess?: (data: Data, key: [K, GET[K]["params"] | undefined]) => void;
-  onError?: (error: Error, key: [K, GET[K]["params"] | undefined]) => void;
+  onSuccess?: (data: Data, key: [K, GET[K]["input"] | undefined]) => void;
+  onError?: (error: ErrorType, key: [K, GET[K]["input"] | undefined]) => void;
 }
 
 export interface UseMutation<Params, ErrorType> {
@@ -45,10 +46,10 @@ export function useMutation<
   K extends keyof GET,
   Params = undefined,
   Data = unknown,
-  ErrorType = Error
+  ErrorType = FetcherError<Params>
 >(
   action: (params: Params) => Promise<Data>,
-  config: Config<K, Data>
+  config: Config<K, Data, ErrorType>
 ): UseMutation<Params, ErrorType> {
   const actionRef = useRef(action);
   const configRef = useRef(config);
@@ -89,8 +90,9 @@ export function useMutation<
         setError(undefined);
       })
       .catch((err) => {
-        onError?.(err, mutateKey);
-        setError(err);
+        const parsedError = parseError(err) as ErrorType;
+        onError?.(parsedError, mutateKey);
+        setError(parsedError);
       })
       .finally(() => {
         pending.current = false;

@@ -5,7 +5,7 @@ import { useQuery } from "@/lib/client/fetcher";
 import { useRef, useState } from "react";
 
 export function Invite({ channelId }: { channelId: string }) {
-  const query = useQuery("/api/invites", { params: { channelId } });
+  const query = useQuery(["/api/invites", { channelId }]);
   const [isCopied, setCopied] = useState(false);
   const timerRef = useRef<number>();
 

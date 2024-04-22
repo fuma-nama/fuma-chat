@@ -21,10 +21,9 @@ import { Invite } from "./invite";
 export function EditGroup({ channel }: { channel: Channel }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
-  const query = useQuery("/api/members", { params: { channelId: channel.id } });
+  const query = useQuery(["/api/members", { channelId: channel.id }]);
   const deleteMutation = useMutation(
-    () =>
-      typedFetch("/api/channels:delete", { params: { channelId: channel.id } }),
+    () => typedFetch("/api/channels:delete", { channelId: channel.id }),
     {
       mutateKey: ["/api/channels", undefined] as const,
       revalidate: false,

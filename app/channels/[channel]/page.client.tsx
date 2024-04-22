@@ -4,13 +4,13 @@ import { SendIcon } from "lucide-react";
 import { useState } from "react";
 import { useStore } from "@/lib/client/store";
 import { typedFetch, useQuery } from "@/lib/client/fetcher";
-import useSWRMutation from "swr/mutation";
 import { cn } from "@/lib/cn";
 import { inputVariants } from "@/components/primitive";
 import Image from "next/image";
 import type { Channel, Message } from "@/lib/server/types";
 import { useAuth } from "@clerk/nextjs";
 import { EditGroup } from "@/components/function/edit-group";
+import { useMutation } from "@/lib/client/use-mutation";
 
 export default function View({
   params,
@@ -23,27 +23,25 @@ export default function View({
   const messages = useStore((s) => s.messages.get(params.channel) ?? []);
   const auth = useAuth();
 
-  useQuery(
-    "/api/messages",
-    { params: { channelId: params.channel } },
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      onSuccess(data) {
-        useStore.setState((prev) => ({
-          messages: new Map(prev.messages).set(params.channel, data),
-        }));
-      },
-    }
-  );
+  useQuery(["/api/messages", { channelId: params.channel }], undefined, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    onSuccess(data) {
+      useStore.setState((prev) => ({
+        messages: new Map(prev.messages).set(params.channel, data),
+      }));
+    },
+  });
 
-  const mutation = useSWRMutation(
-    ["/api/messages", { channelId: params.channel }] as const,
-    ([key, params], { arg }: { arg: string }) =>
-      typedFetch(`${key}:post`, {
-        bodyJson: { channelId: params.channelId, message: arg },
+  const mutation = useMutation(
+    ({ message }: { message: string }) =>
+      typedFetch("/api/messages:post", {
+        channelId: params.channel,
+        message,
       }),
+
     {
+      mutateKey: ["/api/messages", { channelId: params.channel }] as const,
       revalidate: false,
     }
   );
@@ -74,7 +72,7 @@ export default function View({
           aria-label="send message"
           className="size-9 bg-blue-500 font-medium text-sm text-nuetral-50 rounded-full p-2.5 transition-colors hover:bg-blue-600"
           disabled={mutation.isMutating}
-          onClick={() => mutation.trigger(value)}
+          onClick={() => mutation.trigger({ message: value })}
         >
           <SendIcon className="size-full" />
         </button>

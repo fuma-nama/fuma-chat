@@ -78,7 +78,7 @@ export const DELETE = handler<API["/api/channels:delete"]["data"]>(
     await db.delete(channelTable).where(eq(channelTable.id, data.channelId));
     await db
       .delete(messageTable)
-      .where(eq(memberTable.channelId, data.channelId));
+      .where(eq(messageTable.channelId, data.channelId));
 
     return NextResponse.json({
       message: "successful",

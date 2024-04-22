@@ -12,7 +12,7 @@ const appId = process.env.NEXT_PUBLIC_PUSHER_API_KEY!;
 
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const auth = useUser();
-  const query = useQuery("/api/channels", undefined);
+  const query = useQuery(["/api/channels", undefined]);
 
   useEffect(() => {
     const data = query.data;

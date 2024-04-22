@@ -43,7 +43,7 @@ function Form({ close }: { close: () => void }) {
   const mutation = useMutation(
     ({ code }: { code: string }) =>
       typedFetch("/api/channels/join:post", {
-        bodyJson: { code },
+        code,
       }),
     {
       mutateKey: ["/api/channels", undefined] as const,
@@ -69,8 +69,7 @@ function Form({ close }: { close: () => void }) {
         id="code"
         value={code}
         required
-        aria-required
-        aria-errormessage={mutation.error?.message}
+        aria-invalid={mutation.error !== undefined}
         onChange={(e) => setCode(e.target.value)}
         className={cn(inputVariants())}
       />

@@ -19,7 +19,11 @@ export async function validate<T extends z.AnyZodObject>(
   }
 
   throw NextResponse.json(
-    { message: result.error.message, error: result.error },
+    {
+      type: "zod_error",
+      message: result.error.issues[0].message,
+      error: result.error.formErrors,
+    },
     { status: 400 }
   );
 }

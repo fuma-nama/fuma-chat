@@ -23,7 +23,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [joinGroup, setJoinGroup] = useState(false);
   const { signOut, openUserProfile } = useClerk();
   const { user } = useUser();
-  const query = useQuery("/api/channels");
+  const query = useQuery(["/api/channels", undefined]);
   const { channel: channelId } = useParams();
 
   return (
@@ -65,8 +65,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             key={channel.id}
             href={`/channels/${channel.id}`}
             className={cn(
-              "rounded-lg text-neutral-50 font-medium text-sm p-4 -mx-2",
-              channelId === channel.id ? "bg-blue-500" : "hover:bg-neutral-800"
+              "rounded-xl text-neutral-50 font-medium text-sm p-3 -mx-2 mb-1",
+              channelId === channel.id
+                ? "bg-neutral-700/50"
+                : "hover:bg-neutral-800"
             )}
           >
             {channel.name}
