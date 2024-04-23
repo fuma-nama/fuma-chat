@@ -12,7 +12,7 @@ const config: Config = {
         "dialog-in": {
           from: {
             opacity: "0",
-            transform: "translate(-50%, -70%) scale(0.9)",
+            transform: "translate(-50%, -50%) scale(0.9)",
           },
           to: {
             transform: "translate(-50%, -50%) scale(1)",
@@ -24,7 +24,7 @@ const config: Config = {
           },
           to: {
             opacity: "0",
-            transform: "translate(-50%, -70%) scale(0.9)",
+            transform: "translate(-50%, -50%) scale(0.9)",
           },
         },
         "popover-in": {

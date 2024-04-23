@@ -1,17 +1,23 @@
 "use client";
 
-import { SendIcon } from "lucide-react";
+import { ChevronDownIcon, MoreHorizontalIcon, SendIcon } from "lucide-react";
 import { useState } from "react";
 import { useStore } from "@/lib/client/store";
 import { typedFetch, useQuery } from "@/lib/client/fetcher";
 import { cn } from "@/lib/cn";
-import { inputVariants } from "@/components/primitive";
+import { buttonVariants, inputVariants } from "@/components/primitive";
 import Image from "next/image";
-import type { Channel, Message } from "@/lib/server/types";
+import type { API, Channel, Message } from "@/lib/server/types";
 import { useAuth } from "@clerk/nextjs";
 import { EditGroup } from "@/components/function/edit-group";
 import { useMutation } from "@/lib/client/use-mutation";
 import { useParams } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/dropdown";
 
 export default function View({
   params,
@@ -73,11 +79,11 @@ function Sendbar() {
 
   return (
     <div className="sticky bottom-0 flex flex-row bg-neutral-900/50 px-4 pb-4 mt-auto gap-2 backdrop-blur-lg">
-      <div className="grid flex-1 max-h-[20vh] overflow-auto *:overflow-hidden *:col-[1/2] *:row-[1/2]">
+      <div className="grid flex-1 max-h-[20vh] overflow-auto *:col-[1/2] *:row-[1/2]">
         <div
           className={cn(
             inputVariants({
-              className: "whitespace-pre-wrap invisible",
+              className: "whitespace-pre-wrap invisible overflow-hidden",
               variant: "rounded",
             })
           )}
@@ -116,13 +122,45 @@ function Sendbar() {
 
 function MessageItem({ message }: { message: Message }) {
   const auth = useAuth();
+  const mutation = useMutation(
+    (input: API["/api/messages:delete"]["input"]) =>
+      typedFetch("/api/messages:delete", input),
+    {
+      mutateKey: ["/api/messages", { channelId: message.channelId }],
+      revalidate: false,
+    }
+  );
 
   if (auth.userId === message.user.id) {
     return (
-      <div className="flex flex-row gap-2 ms-auto me-4 max-w-[70%]">
-        <p className="p-2 rounded-xl bg-blue-500 text-sm whitespace-pre-wrap">
-          {message.message}
-        </p>
+      <div className="flex flex-row items-end gap-2 ms-auto me-4 max-w-[70%] rounded-xl bg-blue-700/50 p-2 group">
+        <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className={cn(
+              buttonVariants({
+                size: "icon",
+                className:
+                  "flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 focus-visible:ring-0",
+              })
+            )}
+          >
+            <ChevronDownIcon className="size-3" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem
+              disabled={mutation.isMutating}
+              onSelect={() =>
+                mutation.trigger({
+                  id: message.id,
+                  channelId: message.channelId,
+                })
+              }
+            >
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     );
   }

@@ -23,14 +23,30 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       const channel = pusher.subscribe(item.id);
       channel.unbind_all();
 
-      channel.bind("my-event", (data: Realtime["channel"]["my-event"]) => {
-        useStore.setState((prev) => ({
-          messages: new Map(prev.messages).set(item.id, [
-            ...(prev.messages.get(item.id) ?? []),
-            data,
-          ]),
-        }));
-      });
+      channel.bind(
+        "message-send",
+        (data: Realtime["channel"]["message-send"]) => {
+          useStore.setState((prev) => ({
+            messages: new Map(prev.messages).set(item.id, [
+              ...(prev.messages.get(item.id) ?? []),
+              data,
+            ]),
+          }));
+        }
+      );
+      channel.bind(
+        "message-delete",
+        (data: Realtime["channel"]["message-delete"]) => {
+          useStore.setState((prev) => ({
+            messages: new Map(prev.messages).set(
+              item.id,
+              (prev.messages.get(item.id) ?? []).filter(
+                (item) => item.id !== data.id
+              )
+            ),
+          }));
+        }
+      );
     }
   }, [query.data]);
 

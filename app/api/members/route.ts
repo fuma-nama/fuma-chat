@@ -1,16 +1,15 @@
 import { memberTable } from "@/lib/database/schema";
 import { db } from "@/lib/server/db";
 import { handler, requireAuth, validate } from "@/lib/server/route-handler";
-import { API } from "@/lib/server/types";
 import { getMembers } from "@/lib/server/zod";
 import { clerkClient } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-export const GET = handler<API["/api/members:get"]["data"]>(async (req) => {
+export const GET = handler<"/api/members:get">(async (req) => {
   const { userId } = requireAuth();
 
-  const data = await validate(req, getMembers, "params");
+  const data = await validate(req, getMembers);
   const members = await db
     .select()
     .from(memberTable)

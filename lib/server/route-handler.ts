@@ -1,17 +1,26 @@
 import { currentUser } from "@clerk/nextjs";
 import { User, auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import type { API } from "./types";
 import type { z } from "zod";
 
+const NO_BODY_METHODS = ["GET", "HEAD", "DELETE"];
+
+/**
+ * Validate request parameters and body
+ * @param req The request
+ * @param schema Zod schema
+ * @param type Where to validate, determined by the request method by default.
+ */
 export async function validate<T extends z.AnyZodObject>(
   req: NextRequest,
   schema: T,
-  type: "body" | "params" = "body"
+  type?: "body" | "params"
 ): Promise<z.infer<T>> {
   const content =
-    type === "body"
-      ? await req.json()
-      : Object.fromEntries(req.nextUrl.searchParams.entries());
+    type === "params" || NO_BODY_METHODS.includes(req.method)
+      ? Object.fromEntries(req.nextUrl.searchParams.entries())
+      : await req.json();
   const result = schema.safeParse(content);
 
   if (result.success) {
@@ -35,7 +44,9 @@ export type HandlerFn<T> = (
   | NextResponse<T | { message: string }>
   | Promise<NextResponse<T | { message: string }>>;
 
-export function handler<T>(fn: HandlerFn<T>): HandlerFn<unknown> {
+export function handler<K extends keyof API>(
+  fn: HandlerFn<API[K]["data"]>
+): HandlerFn<unknown> {
   return async (req: NextRequest, ctx: { params: unknown }) => {
     try {
       return await fn(req, ctx);

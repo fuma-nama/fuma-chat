@@ -9,6 +9,11 @@ export const getMessages = z.strictObject({
   channelId: z.string(),
 });
 
+export const deleteMessage = z.strictObject({
+  id: z.string(),
+  channelId: z.string(),
+});
+
 export const postChannel = z.strictObject({
   name: z.string().trim().min(1).max(255),
 });
