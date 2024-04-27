@@ -17,6 +17,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import {Sidebar} from "@/components/layout/sidebar";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [createGroup, setCreateGroup] = useState(false);
@@ -28,7 +29,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <main className="flex h-dvh flex-row">
-      <div className="flex flex-col border-r bg-neutral-800/50 border-neutral-700 p-4 w-[280px] relative overflow-auto">
+      <Sidebar>
         <DropdownMenu>
           <DropdownMenuTrigger className="flex flex-row gap-3 items-center text-sm text-left px-4 -mx-4 pb-4 border-b border-neutral-700 mb-4 focus:outline-none hover:bg-neutral-800">
             {user ? (
@@ -98,7 +99,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+      </Sidebar>
       <div className="flex flex-col flex-1 overflow-auto">{children}</div>
     </main>
   );

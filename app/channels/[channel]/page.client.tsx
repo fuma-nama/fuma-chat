@@ -18,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/dropdown";
+import { getTimeString } from "@/lib/date";
 
 export default function View({
   params,
@@ -44,7 +45,7 @@ export default function View({
 
   return (
     <>
-      <div className="sticky top-0 flex flex-row items-center px-4 bg-neutral-900/50 backdrop-blur-lg min-h-12">
+      <div className="sticky top-0 flex flex-row items-center px-4 bg-neutral-900/50 backdrop-blur-lg min-h-12 z-20 max-md:pl-12">
         <p className="font-medium text-sm">{channelInfo.name}</p>
         <EditGroup channel={channelInfo} />
       </div>
@@ -130,24 +131,33 @@ function MessageItem({ message }: { message: Message }) {
       revalidate: false,
     }
   );
+  const timeStr = getTimeString(new Date(message.timestamp));
 
   if (auth.userId === message.user.id) {
     return (
-      <div className="flex flex-row items-end gap-2 ms-auto me-4 max-w-[70%] rounded-xl bg-blue-700/50 p-2 group">
+      <div className="relative flex flex-col gap-2 ms-auto me-4 min-w-32 max-w-[70%] rounded-xl bg-neutral-800 p-2 group">
         <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+        <p className="text-xs text-neutral-400 text-right">{timeStr}</p>
         <DropdownMenu>
           <DropdownMenuTrigger
             className={cn(
               buttonVariants({
                 size: "icon",
                 className:
-                  "flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 focus-visible:ring-0",
+                  "absolute -top-2 right-2 p-1 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 focus-visible:ring-0",
               })
             )}
           >
-            <ChevronDownIcon className="size-3" />
+            <ChevronDownIcon className="size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent>
+            <DropdownMenuItem
+              onSelect={() => {
+                void navigator.clipboard.writeText(message.message);
+              }}
+            >
+              Copy
+            </DropdownMenuItem>
             <DropdownMenuItem
               disabled={mutation.isMutating}
               onSelect={() =>
