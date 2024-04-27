@@ -39,7 +39,7 @@ export const GET = handler<"/api/messages:get">(async (req) => {
     userId: messages.map((m) => m.userId),
   });
 
-  const userMap = new Map(list.map((u) => [u.id, u]));
+  const userMap = new Map(list.data.map((u) => [u.id, u]));
 
   return NextResponse.json(
     messages.flatMap((message) => {

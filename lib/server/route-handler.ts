@@ -1,5 +1,4 @@
-import { currentUser } from "@clerk/nextjs";
-import { User, auth } from "@clerk/nextjs/server";
+import { User, auth, currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import type { API } from "./types";
 import type { z } from "zod";

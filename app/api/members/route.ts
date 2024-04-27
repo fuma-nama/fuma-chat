@@ -24,7 +24,7 @@ export const GET = handler<"/api/members:get">(async (req) => {
   const users = await clerkClient.users.getUserList({
     userId: members.map((m) => m.userId),
   });
-  const userMap = new Map(users.map((u) => [u.id, u]));
+  const userMap = new Map(users.data.map((u) => [u.id, u]));
 
   return NextResponse.json(
     members.flatMap((m) => {
