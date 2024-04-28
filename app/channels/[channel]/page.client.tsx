@@ -1,9 +1,9 @@
 "use client";
 
-import {ChevronDownIcon, MoreHorizontalIcon, SendIcon} from "lucide-react";
-import {ReactNode, useCallback, useMemo, useState} from "react";
+import {ChevronDownIcon, SendIcon} from "lucide-react";
+import {ReactNode, useCallback, useState} from "react";
 import {useStore} from "@/lib/client/store";
-import {typedFetch, useQuery} from "@/lib/client/fetcher";
+import {typedFetch} from "@/lib/client/fetcher";
 import {cn} from "@/lib/cn";
 import {buttonVariants, inputVariants} from "@/components/primitive";
 import Image from "next/image";
@@ -18,78 +18,47 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/dropdown";
-import {getDateString, getTimeString} from "@/lib/date";
+import {getTimeString} from "@/lib/date";
 import {ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger} from "@/components/context-menu";
 import {DropdownMenuItemProps} from "@radix-ui/react-dropdown-menu";
 import {ContextMenuItemProps} from "@radix-ui/react-context-menu";
+import {ChatView, useItems} from "@/components/function/chat-view";
 
-type  ItemType = { type: 'message', message: Message } | { type: 'date', date: string }
-
-export default function View({
-                                 params,
-                                 channelInfo,
-                             }: {
-    params: { channel: string };
+export default function View({channelId, channelInfo}: {
+    channelId: string,
     channelInfo: Channel;
 }) {
-    const messages = useStore((s) => s.messages.get(params.channel) ?? []);
+    const channel = useStore((s) => s.getChannel(channelId));
     const auth = useAuth();
-
-    useQuery(["/api/messages", {channelId: params.channel}], undefined, {
-        revalidateIfStale: false,
-        revalidateOnFocus: false,
-        onSuccess(data) {
-            useStore.setState((prev) => ({
-                messages: new Map(prev.messages).set(params.channel, data),
-            }));
-        },
-    });
-
-    const items = useMemo(() => {
-        const lists: ItemType[] = []
-        let prevDate: string | undefined
-        for (const message of messages) {
-            const date = new Date(message.timestamp)
-            const dateStr = getDateString(date)
-
-            if (prevDate !== dateStr) {
-                lists.push({type: 'date', date: dateStr})
-            }
-
-            lists.push({type: 'message', message})
-            prevDate = dateStr
-        }
-
-        return lists
-    }, [messages])
+    const items = useItems(channel.messages)
 
     if (!auth.isLoaded)
         return <p className="m-auto text-sm text-neutral-400">Loading</p>;
 
     return (
-        <div className='relative flex flex-col-reverse overflow-auto h-screen'>
-            <div className='flex flex-col flex-1'>
-                <div
-                    className="sticky top-0 flex flex-row items-center px-4 bg-neutral-900/50 backdrop-blur-lg min-h-12 z-20 max-md:pl-12">
-                    <p className="font-medium text-sm">{channelInfo.name}</p>
-                    <EditGroup channel={channelInfo}/>
-                </div>
-                <div className="flex flex-col gap-6 py-4 h-full">
-                    {items.map((item) => {
-                        if (item.type === 'message')
-                            return <MessageItem key={item.message.id} message={item.message}/>
-                        if (item.type === 'date')
-                            return <div
-                                key={item.date}
-                                className='sticky top-16 p-2 w-24 text-center text-xs mx-auto rounded-xl bg-neutral-800 text-neutral-400'
-                            >
-                                {item.date}
-                            </div>
-                    })}
-                </div>
-                <Sendbar/>
+        <ChatView channelId={channelId}>
+            <div
+                className="sticky top-0 flex flex-row items-center px-4 bg-neutral-900/50 backdrop-blur-lg min-h-12 z-20 max-md:pl-12">
+                <p className="font-medium text-sm">{channelInfo.name}</p>
+                <EditGroup channel={channelInfo}/>
             </div>
-        </div>
+            <div className="flex flex-col gap-6 py-4 h-full">
+                {items.map((item) => {
+                    if (item.type === 'message')
+                        return <MessageItem key={item.message.id} message={item.message}/>
+                    if (item.type === 'date')
+                        return <div
+                            key={item.date}
+                            className='sticky top-16 p-2 w-24 text-center text-xs mx-auto rounded-xl bg-neutral-800 text-neutral-400'
+                        >
+                            {item.date}
+                        </div>
+                })}
+                {items.length === 0 &&
+                    <div className='text-center text-sm text-neutral-400 mt-8'>No message here</div>}
+            </div>
+            <Sendbar/>
+        </ChatView>
     );
 }
 
@@ -225,7 +194,7 @@ function MessageActions({message, features, children}: { message: Message, featu
         (input: API["/api/messages:delete"]["input"]) =>
             typedFetch("/api/messages:delete", input),
         {
-            mutateKey: ["/api/messages", {channelId: message.channelId}],
+            mutateKey: ["/api/messages", undefined],
             revalidate: false,
         }
     );
@@ -239,7 +208,10 @@ function MessageActions({message, features, children}: { message: Message, featu
     ]
 
     if (features.delete) items.push({
-        key: 'delete', children: "Delete", onSelect: () =>
+        key: 'delete',
+        children: "Delete",
+        disabled: mutation.isMutating,
+        onSelect: () =>
             mutation.trigger({
                 id: message.id,
                 channelId: message.channelId,
@@ -252,11 +224,11 @@ function MessageActions({message, features, children}: { message: Message, featu
                 {children}
             </ContextMenuTrigger>
             <ContextMenuContent>
-                {items.map(item => <ContextMenuItem key={item.key} {...item} />)}
+                {items.map(({key, ...item}) => <ContextMenuItem key={key} {...item} />)}
             </ContextMenuContent>
         </ContextMenu>
         <DropdownMenuContent>
-            {items.map(item => <DropdownMenuItem key={item.key} {...item} />)}
+            {items.map(({key, ...item}) => <DropdownMenuItem key={key} {...item} />)}
         </DropdownMenuContent>
     </DropdownMenu>
 }

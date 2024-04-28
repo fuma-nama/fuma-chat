@@ -11,7 +11,7 @@ import {
     validate,
 } from "@/lib/server/route-handler";
 import {deleteMessage, getMessages, postMessage} from "@/lib/server/zod";
-import {and, eq} from "drizzle-orm";
+import {and, desc, eq, lt, SQLWrapper} from "drizzle-orm";
 import {clerkClient} from "@clerk/nextjs/server";
 
 export const GET = handler<"/api/messages:get">(async (req) => {
@@ -33,7 +33,16 @@ export const GET = handler<"/api/messages:get">(async (req) => {
     const messages = await db
         .select()
         .from(messageTable)
-        .where(eq(messageTable.channelId, data.channelId));
+        .where(() => {
+            const conditions: SQLWrapper[] = []
+            conditions.push(eq(messageTable.channelId, data.channelId))
+
+            if (data.before !== undefined) {
+                conditions.push(lt(messageTable.timestamp, new Date(data.before)))
+            }
+
+            return and(...conditions)
+        }).limit(data.count ?? 20).orderBy(desc(messageTable.timestamp));
 
     const list = await clerkClient.users.getUserList({
         userId: messages.map((m) => m.userId),
@@ -57,7 +66,7 @@ export const GET = handler<"/api/messages:get">(async (req) => {
                 message: message.content,
                 timestamp: message.timestamp.getTime(),
             };
-        })
+        }).reverse()
     );
 });
 
@@ -119,6 +128,7 @@ export const DELETE = handler<"/api/messages:delete">(async (req) => {
     await db.delete(messageTable).where(eq(messageTable.id, body.id));
     await pusher.trigger(body.channelId, "message-delete", {
         id: body.id,
+        channelId: body.channelId,
     } satisfies Realtime["channel"]["message-delete"]);
     return NextResponse.json({message: "Successful"});
 });
