@@ -136,10 +136,10 @@ function MessageItem({message}: { message: Message }) {
         return (
             <MessageActions message={message} features={features}>
                 <div
-                    className="relative flex flex-col gap-2 ms-auto me-4 min-w-32 max-w-[70%] rounded-xl bg-neutral-800 p-2 group">
+                    className="relative ms-auto me-4 max-w-[70%] rounded-xl bg-neutral-800 p-2 group">
                     <MessageActionsTrigger/>
-                    <p className="text-sm whitespace-pre-wrap">{message.message}</p>
-                    <p className="text-xs text-neutral-400 text-right">{timeStr}</p>
+                    <p className="text-sm whitespace-pre-wrap pr-12">{message.message}</p>
+                    <p className="text-xs text-neutral-400 mt-2 text-right">{timeStr}</p>
                 </div>
             </MessageActions>
         );
@@ -152,21 +152,19 @@ function MessageItem({message}: { message: Message }) {
                 src={message.user.imageUrl}
                 width={32}
                 height={32}
-                className="rounded-full size-8 min-w-8 mt-auto"
+                className="rounded-full size-8 mt-auto flex-shrink-0"
                 unoptimized
             />
-
-            <div>
-                <p className="text-xs text-neutral-400 px-2 mb-1">
-                    {message.user.name}
-                </p>
-                <MessageActions message={message} features={features}>
-                    <p className="relative p-2 rounded-xl bg-neutral-800 text-sm whitespace-pre-wrap group">
-                        <MessageActionsTrigger/>
-                        {message.message}
+            <MessageActions message={message} features={features}>
+                <div className="relative p-2 rounded-xl bg-neutral-800 group">
+                    <MessageActionsTrigger/>
+                    <p className="text-xs font-medium text-orange-200 mb-1">
+                        {message.user.name}
                     </p>
-                </MessageActions>
-            </div>
+                    <p className="text-sm whitespace-pre-wrap pr-12">{message.message}</p>
+                    <p className="text-xs text-neutral-400 text-right mt-2">{timeStr}</p>
+                </div>
+            </MessageActions>
         </div>
     )
 }

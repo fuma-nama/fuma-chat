@@ -47,7 +47,7 @@ export function ChatView({channelId, children}: { channelId: string, children: R
 export function useItems(messages: Message[]): ItemType[] {
     return useMemo(() => {
         const lists: ItemType[] = []
-        let prevDate: string | undefined
+        let prevDate: string | undefined = undefined
         for (const message of messages) {
             const date = new Date(message.timestamp)
             const dateStr = getDateString(date)
