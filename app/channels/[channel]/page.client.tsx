@@ -136,10 +136,10 @@ function MessageItem({message}: { message: Message }) {
         return (
             <MessageActions message={message} features={features}>
                 <div
-                    className="relative ms-auto me-4 max-w-[70%] rounded-xl bg-neutral-800 p-2 group">
+                    className="relative flex flex-row gap-3 items-end ms-auto me-4 max-w-[70%] rounded-xl bg-neutral-800 p-2 group">
                     <MessageActionsTrigger/>
-                    <p className="text-sm whitespace-pre-wrap pr-12">{message.message}</p>
-                    <p className="text-xs text-neutral-400 mt-2 text-right">{timeStr}</p>
+                    <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                    <p className="text-xs text-neutral-400">{timeStr}</p>
                 </div>
             </MessageActions>
         );
@@ -161,8 +161,10 @@ function MessageItem({message}: { message: Message }) {
                     <p className="text-xs font-medium text-orange-200 mb-1">
                         {message.user.name}
                     </p>
-                    <p className="text-sm whitespace-pre-wrap pr-12">{message.message}</p>
-                    <p className="text-xs text-neutral-400 text-right mt-2">{timeStr}</p>
+                    <div className='flex flex-row gap-3 items-end'>
+                        <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                        <p className="text-xs text-neutral-400">{timeStr}</p>
+                    </div>
                 </div>
             </MessageActions>
         </div>

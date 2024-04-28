@@ -1,8 +1,10 @@
 export function getTimeString(time: Date): string {
-    return `${time.getHours().toString().padStart(2, "0")}:${time
-        .getMinutes()
+    const hours = time.getHours()
+    const minutes = time.getMinutes()
+
+    return `${(hours % 12).toString()}:${minutes
         .toString()
-        .padStart(2, "0")}`;
+        .padStart(2, "0")} ${hours >= 12 ? "PM" : "AM"}`;
 }
 
 export function getDateString(time: Date, {today = true}: { today?: boolean } = {}): string {
