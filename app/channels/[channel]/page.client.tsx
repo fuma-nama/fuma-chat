@@ -1,7 +1,7 @@
 "use client";
 
 import {ChevronDownIcon, MoreHorizontalIcon, SendIcon} from "lucide-react";
-import {useMemo, useState} from "react";
+import {ReactNode, useCallback, useMemo, useState} from "react";
 import {useStore} from "@/lib/client/store";
 import {typedFetch, useQuery} from "@/lib/client/fetcher";
 import {cn} from "@/lib/cn";
@@ -19,6 +19,9 @@ import {
     DropdownMenuTrigger,
 } from "@/components/dropdown";
 import {getDateString, getTimeString} from "@/lib/date";
+import {ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger} from "@/components/context-menu";
+import {DropdownMenuItemProps} from "@radix-ui/react-dropdown-menu";
+import {ContextMenuItemProps} from "@radix-ui/react-context-menu";
 
 type  ItemType = { type: 'message', message: Message } | { type: 'date', date: string }
 
@@ -154,61 +157,27 @@ function Sendbar() {
 
 function MessageItem({message}: { message: Message }) {
     const auth = useAuth();
-    const mutation = useMutation(
-        (input: API["/api/messages:delete"]["input"]) =>
-            typedFetch("/api/messages:delete", input),
-        {
-            mutateKey: ["/api/messages", {channelId: message.channelId}],
-            revalidate: false,
-        }
-    );
     const timeStr = getTimeString(new Date(message.timestamp));
+
+    const features: Features = {
+        delete: auth.userId === message.user.id
+    }
 
     if (auth.userId === message.user.id) {
         return (
-            <div
-                className="relative flex flex-col gap-2 ms-auto me-4 min-w-32 max-w-[70%] rounded-xl bg-neutral-800 p-2 group">
-                <p className="text-sm whitespace-pre-wrap">{message.message}</p>
-                <p className="text-xs text-neutral-400 text-right">{timeStr}</p>
-                <DropdownMenu>
-                    <DropdownMenuTrigger
-                        className={cn(
-                            buttonVariants({
-                                size: "icon",
-                                className:
-                                    "absolute -top-2 right-2 p-1 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 focus-visible:ring-0",
-                            })
-                        )}
-                    >
-                        <ChevronDownIcon className="size-4"/>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuItem
-                            onSelect={() => {
-                                void navigator.clipboard.writeText(message.message);
-                            }}
-                        >
-                            Copy
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            disabled={mutation.isMutating}
-                            onSelect={() =>
-                                mutation.trigger({
-                                    id: message.id,
-                                    channelId: message.channelId,
-                                })
-                            }
-                        >
-                            Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
+            <MessageActions message={message} features={features}>
+                <div
+                    className="relative flex flex-col gap-2 ms-auto me-4 min-w-32 max-w-[70%] rounded-xl bg-neutral-800 p-2 group">
+                    <MessageActionsTrigger/>
+                    <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                    <p className="text-xs text-neutral-400 text-right">{timeStr}</p>
+                </div>
+            </MessageActions>
         );
     }
 
     return (
-        <div className="flex flex-row gap-2 ms-4 max-w-[70%]">
+        <div className="relative flex flex-row gap-2 ms-4 max-w-[70%]">
             <Image
                 alt="avatar"
                 src={message.user.imageUrl}
@@ -217,15 +186,77 @@ function MessageItem({message}: { message: Message }) {
                 className="rounded-full size-8 min-w-8 mt-auto"
                 unoptimized
             />
+
             <div>
                 <p className="text-xs text-neutral-400 px-2 mb-1">
                     {message.user.name}
                 </p>
-
-                <p className="p-2 rounded-xl bg-neutral-800 text-sm whitespace-pre-wrap">
-                    {message.message}
-                </p>
+                <MessageActions message={message} features={features}>
+                    <p className="relative p-2 rounded-xl bg-neutral-800 text-sm whitespace-pre-wrap group">
+                        <MessageActionsTrigger/>
+                        {message.message}
+                    </p>
+                </MessageActions>
             </div>
         </div>
+    )
+}
+
+function MessageActionsTrigger() {
+    return <DropdownMenuTrigger
+        className={cn(
+            buttonVariants({
+                size: "icon",
+                className:
+                    "absolute -top-2 right-2 p-1 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 focus-visible:ring-0",
+            })
+        )}
+    >
+        <ChevronDownIcon className="size-4"/>
+    </DropdownMenuTrigger>
+}
+
+interface Features {
+    delete: boolean
+}
+
+function MessageActions({message, features, children}: { message: Message, features: Features, children: ReactNode }) {
+    const mutation = useMutation(
+        (input: API["/api/messages:delete"]["input"]) =>
+            typedFetch("/api/messages:delete", input),
+        {
+            mutateKey: ["/api/messages", {channelId: message.channelId}],
+            revalidate: false,
+        }
     );
+
+    const onCopy = useCallback(() => {
+        void navigator.clipboard.writeText(message.message);
+    }, [message.message])
+
+    const items: (DropdownMenuItemProps | ContextMenuItemProps)[] = [
+        {key: 'copy', children: "Copy", onSelect: onCopy},
+    ]
+
+    if (features.delete) items.push({
+        key: 'delete', children: "Delete", onSelect: () =>
+            mutation.trigger({
+                id: message.id,
+                channelId: message.channelId,
+            }),
+    })
+
+    return <DropdownMenu>
+        <ContextMenu>
+            <ContextMenuTrigger asChild>
+                {children}
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+                {items.map(item => <ContextMenuItem key={item.key} {...item} />)}
+            </ContextMenuContent>
+        </ContextMenu>
+        <DropdownMenuContent>
+            {items.map(item => <DropdownMenuItem key={item.key} {...item} />)}
+        </DropdownMenuContent>
+    </DropdownMenu>
 }
