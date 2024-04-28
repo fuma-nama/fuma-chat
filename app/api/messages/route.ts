@@ -13,6 +13,7 @@ import {
 import {deleteMessage, getMessages, postMessage} from "@/lib/server/zod";
 import {and, desc, eq, lt, SQLWrapper} from "drizzle-orm";
 import {clerkClient} from "@clerk/nextjs/server";
+import {hasPermission, Permissions} from "@/lib/server/permissions";
 
 export const GET = handler<"/api/messages:get">(async (req) => {
     const {userId} = requireAuth();
@@ -102,6 +103,14 @@ export const DELETE = handler<"/api/messages:delete">(async (req) => {
     const auth = requireAuth();
     const body = await validate(req, deleteMessage);
 
+    const membership = await db.select().from(memberTable).where(eq(memberTable.userId, auth.userId)).limit(1).then(res => res[0])
+
+    if (!membership)
+        return NextResponse.json(
+            {message: "You must be the member of channel"},
+            {status: 401}
+        );
+
     const message = await db
         .select()
         .from(messageTable)
@@ -119,7 +128,7 @@ export const DELETE = handler<"/api/messages:delete">(async (req) => {
             {message: "Message doesn't exist"},
             {status: 404}
         );
-    if (message.userId !== auth.userId)
+    if (message.userId !== auth.userId && !hasPermission(membership.permissions, Permissions.DeleteMessage))
         return NextResponse.json(
             {message: "You don't have the permission"},
             {status: 401}

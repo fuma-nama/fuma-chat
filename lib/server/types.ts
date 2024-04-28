@@ -7,7 +7,7 @@ import {
     getInvite,
     postMessage,
     postChannelJoin,
-    deleteMessage,
+    deleteMessage, deleteMember,
 } from "./zod";
 
 export interface Realtime {
@@ -80,13 +80,17 @@ export interface POST {
 
 export interface DELETE {
     "/api/channels": {
-        input: z.infer<typeof deleteChannel>;
+        input: z.input<typeof deleteChannel>;
         data: { message: string };
     };
     "/api/messages": {
-        input: z.infer<typeof deleteMessage>;
+        input: z.input<typeof deleteMessage>;
         data: { message: string };
     };
+    "/api/members": {
+        input: z.input<typeof deleteMember>
+        data: { message: string }
+    }
 }
 
 export type API = {
