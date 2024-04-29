@@ -17,6 +17,14 @@ import {useRouter} from "next/navigation";
 import Image from "next/image";
 import {useMutation} from "@/lib/client/use-mutation";
 import {Invite} from "./invite";
+import {useToastStore} from "@/lib/client/store";
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel,
+    AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger
+} from "@/components/alert-dialog";
 
 export function EditGroup({channel}: { channel: Channel }) {
     const [open, setOpen] = useState(false);
@@ -63,22 +71,64 @@ export function EditGroup({channel}: { channel: Channel }) {
                 ))}
                 <Invite channelId={channel.id}/>
                 <DialogFooter>
-                    <button
-                        className={cn(buttonVariants({color: "danger"}))}
-                        onClick={() => deleteMutation.trigger()}
-                        disabled={deleteMutation.isMutating}
-                    >
-                        Delete Group
-                    </button>
+                    <DeleteGroup channelId={channel.id}/>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
     );
 }
 
+function DeleteGroup({channelId}: { channelId: string }) {
+    const [alert, setAlert] = useState(false)
+    const router = useRouter()
+
+    const deleteMutation = useMutation(
+        () => typedFetch("/api/channels:delete", {channelId}),
+        {
+            mutateKey: ["/api/channels", undefined] as const,
+            revalidate: false,
+            cache(_, channels = []) {
+                return channels.filter((c) => channelId !== c.id);
+            },
+            onSuccess() {
+                setAlert(false)
+                router.push("/channels");
+            },
+        }
+    );
+
+    return <AlertDialog open={alert} onOpenChange={setAlert}>
+        <AlertDialogTrigger className={cn(buttonVariants({color: "danger"}))}>
+            Delete Group
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Do you sure?</AlertDialogTitle>
+                <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                    onClick={() => deleteMutation.trigger()}
+                    disabled={deleteMutation.isMutating}
+                >
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+}
+
 function Item({channelId, member}: { channelId: string, member: Member }) {
     const mutation = useMutation(() => typedFetch('/api/members:delete', {memberId: member.user.id, channelId}), {
         mutateKey: ['/api/members', {channelId,}],
+        onError(e) {
+            useToastStore.getState().addToast({
+                type: 'destructive',
+                title: "Failed to kick member",
+                description: e.message,
+            })
+        }
     })
 
     return <div
@@ -89,7 +139,7 @@ function Item({channelId, member}: { channelId: string, member: Member }) {
             src={member.user.imageUrl}
             width={32}
             height={32}
-            className="size-6 min-w-6 rounded-full"
+            className="size-6 flex-shrink-0 rounded-full"
         />
         {member.user.name}
         <button disabled={mutation.isMutating}

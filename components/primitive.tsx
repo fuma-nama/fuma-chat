@@ -8,6 +8,7 @@ export const buttonVariants = cva(
                 primary: "text-neutral-50 bg-blue-500 hover:bg-blue-600",
                 secondary:
                     "text-neutral-100 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700",
+                ghost: "bg-transparent hover:text-neutral-50 hover:bg-neutral-700",
                 danger: "text-neutral-50 bg-red-500 hover:bg-red-600",
             },
             size: {
