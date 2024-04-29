@@ -10,7 +10,7 @@ const Popover = PopoverPrimitive.Root;
 
 const PopoverTrigger = PopoverPrimitive.Trigger;
 
-export const popoverVariants = cva("z-50 w-72 rounded-lg border border-neutral-700 bg-neutral-900 p-4 text-neutral-50 shadow-lg outline-none data-[state=open]:animate-popover-in data-[state=closed]:animate-popover-out")
+export const popoverVariants = cva("z-50 w-72 rounded-lg border border-neutral-700 bg-neutral-900 p-4 text-neutral-50 shadow-lg shadow-black outline-none data-[state=open]:animate-popover-in data-[state=closed]:animate-popover-out")
 
 const PopoverContent = React.forwardRef<
     React.ElementRef<typeof PopoverPrimitive.Content>,

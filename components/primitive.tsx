@@ -22,7 +22,7 @@ export const buttonVariants = cva(
     }
 );
 
-export const menuButtonVariants = cva(buttonVariants({className: 'text-left py-2 first:rounded-t-lg rounded-none last:rounded-b-lg transition-none'}), {
+export const menuButtonVariants = cva(buttonVariants({className: 'text-left py-2 first:rounded-t-lg rounded-none last:rounded-b-lg transition-none data-[state=open]:bg-neutral-700'}), {
     variants: {
         variant: {
             danger: "text-red-500"

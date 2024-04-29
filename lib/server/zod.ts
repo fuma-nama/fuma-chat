@@ -36,6 +36,10 @@ export const postChannelJoin = z.strictObject({
     code: z.string(),
 });
 
+export const postInvite = z.strictObject({
+    channelId: z.string(),
+})
+
 export const deleteMember = z.strictObject({
     channelId: z.string(),
     memberId: z.string()
