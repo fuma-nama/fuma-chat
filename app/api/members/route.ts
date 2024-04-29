@@ -69,7 +69,7 @@ export const DELETE = handler<'/api/members:delete'>(async req => {
     if (!membership)
         return NextResponse.json({message: "You must be the member of channel"}, {status: 401});
 
-    if (channel.ownerId !== userId && !hasPermission(membership.permissions, Permissions.Kick))
+    if (!hasPermission(membership.permissions, Permissions.Kick) && !hasPermission(membership.permissions, Permissions.Admin))
         return NextResponse.json({message: "You do not have the permission to kick members"}, {status: 401});
 
     await db.delete(memberTable).where(and(eq(memberTable.channelId, data.channelId), eq(memberTable.userId, data.memberId)));

@@ -128,16 +128,19 @@ export const DELETE = handler<"/api/messages:delete">(async (req) => {
             {message: "Message doesn't exist"},
             {status: 404}
         );
-    if (message.userId !== auth.userId && !hasPermission(membership.permissions, Permissions.DeleteMessage))
+    if (message.userId !== auth.userId && !hasPermission(membership.permissions, Permissions.DeleteMessage) && !hasPermission(membership.permissions, Permissions.Admin))
         return NextResponse.json(
             {message: "You don't have the permission"},
             {status: 401}
         );
 
-    await db.delete(messageTable).where(eq(messageTable.id, body.id));
-    await pusher.trigger(body.channelId, "message-delete", {
-        id: body.id,
-        channelId: body.channelId,
-    } satisfies Realtime["channel"]["message-delete"]);
+    await Promise.all([
+        db.delete(messageTable).where(eq(messageTable.id, body.id)),
+        pusher.trigger(body.channelId, "message-delete", {
+            id: body.id,
+            channelId: body.channelId,
+        } satisfies Realtime["channel"]["message-delete"])
+    ])
+
     return NextResponse.json({message: "Successful"});
 });

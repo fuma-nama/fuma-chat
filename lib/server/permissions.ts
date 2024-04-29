@@ -1,8 +1,10 @@
 export const Permissions = {
     None: 0,
-    DeleteMessage: 2 ^ 0,
-    Kick: 2 ^ 1,
-    Admin: 2 ^ 1 | 2 ^ 0,
+    DeleteMessage: 1,
+    Kick: 2,
+    Invite: Math.pow(2, 2),
+
+    Admin: Math.pow(2, 3),
 }
 
 export function hasPermission(permission: number, check: number): boolean {
