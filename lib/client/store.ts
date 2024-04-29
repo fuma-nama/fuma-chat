@@ -76,3 +76,26 @@ export const useStore = create<StoreType>((_, get) => ({
         return info
     },
 }));
+
+export interface ToastItem {
+    id: number
+    type: 'default' | 'destructive'
+    title: string
+    description: string
+}
+
+interface ToastStoreType {
+    toasts: ToastItem[];
+    addToast: (item: Omit<ToastItem, 'id'>) => void;
+}
+
+let nextToastId = 0;
+
+export const useToastStore = create<ToastStoreType>((set, get) => ({
+    toasts: [],
+    addToast(item) {
+        set({
+            toasts: [...get().toasts, {id: nextToastId++, ...item}]
+        })
+    }
+}))
