@@ -22,6 +22,14 @@ export const buttonVariants = cva(
     }
 );
 
+export const menuButtonVariants = cva(buttonVariants({className: 'text-left py-2 first:rounded-t-lg rounded-none last:rounded-b-lg transition-none'}), {
+    variants: {
+        variant: {
+            danger: "text-red-500"
+        }
+    }
+});
+
 export const inputVariants = cva(
     "bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-2 text-sm transition-colors focus:outline-none placeholder:text-neutral-400 focus-visible:bg-neutral-800",
     {

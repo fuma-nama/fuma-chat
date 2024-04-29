@@ -3,14 +3,13 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
 } from "../dialog";
 import {Channel, Member} from "@/lib/server/types";
 import {cn} from "@/lib/cn";
-import {buttonVariants} from "../primitive";
+import {buttonVariants, menuButtonVariants} from "../primitive";
 import {typedFetch, useQuery} from "@/lib/client/fetcher";
 import {useState} from "react";
 import {useRouter} from "next/navigation";
@@ -28,22 +27,7 @@ import {
 
 export function EditGroup({channel}: { channel: Channel }) {
     const [open, setOpen] = useState(false);
-    const router = useRouter();
     const query = useQuery(["/api/members", {channelId: channel.id}]);
-    const deleteMutation = useMutation(
-        () => typedFetch("/api/channels:delete", {channelId: channel.id}),
-        {
-            mutateKey: ["/api/channels", undefined] as const,
-            revalidate: false,
-            cache(_, channels = []) {
-                return channels.filter((c) => channel.id !== c.id);
-            },
-            onSuccess() {
-                setOpen(false);
-                router.push("/channels");
-            },
-        }
-    );
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -69,16 +53,17 @@ export function EditGroup({channel}: { channel: Channel }) {
                         member={member}
                     />
                 ))}
-                <Invite channelId={channel.id}/>
-                <DialogFooter>
-                    <DeleteGroup channelId={channel.id}/>
-                </DialogFooter>
+
+                <div className='flex flex-col mt-4'>
+                    <Invite channelId={channel.id}/>
+                    <DeleteGroup channelId={channel.id} name={channel.name}/>
+                </div>
             </DialogContent>
         </Dialog>
     );
 }
 
-function DeleteGroup({channelId}: { channelId: string }) {
+function DeleteGroup({channelId, name}: { channelId: string, name: string }) {
     const [alert, setAlert] = useState(false)
     const router = useRouter()
 
@@ -98,12 +83,12 @@ function DeleteGroup({channelId}: { channelId: string }) {
     );
 
     return <AlertDialog open={alert} onOpenChange={setAlert}>
-        <AlertDialogTrigger className={cn(buttonVariants({color: "danger"}))}>
+        <AlertDialogTrigger className={cn(menuButtonVariants({variant: 'danger'}))}>
             Delete Group
         </AlertDialogTrigger>
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Do you sure?</AlertDialogTitle>
+                <AlertDialogTitle>Delete &quot;{name}&quot;?</AlertDialogTitle>
                 <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
