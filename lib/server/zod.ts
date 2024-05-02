@@ -44,3 +44,8 @@ export const deleteMember = z.strictObject({
     channelId: z.string(),
     memberId: z.string()
 })
+
+export const patchChannel = z.strictObject({
+    channelId: z.string(),
+    name: z.string().min(1).max(255),
+})

@@ -52,7 +52,7 @@ export async function typedFetch<K extends keyof API>(
     init?: Omit<RequestInit, "method">
 ): Promise<API[K]["data"]> {
     const [api, method] = key.split(":");
-    const options: FetcherOptions = {method, ...init};
+    const options: FetcherOptions = {method: method.toUpperCase(), ...init};
 
     if (method === "get" || method === "delete") options.params = input;
     else if (input !== undefined) options.body = JSON.stringify(input);

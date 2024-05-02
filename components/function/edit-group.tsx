@@ -7,11 +7,11 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "../dialog";
-import {Member} from "@/lib/server/types";
+import {API, Channel, Member} from "@/lib/server/types";
 import {cn} from "@/lib/cn";
-import {buttonVariants, menuButtonVariants} from "../primitive";
+import {buttonVariants, inputVariants, menuButtonVariants} from "../primitive";
 import {typedFetch, useQuery} from "@/lib/client/fetcher";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
 import Image from "next/image";
 import {useMutation} from "@/lib/client/use-mutation";
@@ -25,6 +25,7 @@ import {
     AlertDialogTrigger
 } from "@/components/alert-dialog";
 import {useAuth} from "@clerk/nextjs";
+import {hasPermission, Permissions} from "@/lib/server/permissions";
 
 export function EditGroup({channelId}: { channelId: string }) {
     const [open, setOpen] = useState(false);
@@ -35,7 +36,8 @@ export function EditGroup({channelId}: { channelId: string }) {
     const channel = info.channel
 
     const features = {
-        delete: auth.isLoaded && channel?.ownerId === auth.userId
+        edit: hasPermission(info.permissions ?? 0, Permissions.Admin),
+        delete: channel && channel.ownerId === auth.userId
     }
 
     return (
@@ -51,25 +53,74 @@ export function EditGroup({channelId}: { channelId: string }) {
                     <DialogTitle>{channel.name}</DialogTitle>
                     <DialogDescription>View chat group details.</DialogDescription>
                 </DialogHeader>
-                <p className="text-xs font-medium">Members</p>
-                {query.isLoading && (
-                    <p className="text-sm text-neutral-400">Loading...</p>
-                )}
-                {query.data?.map((member) => (
-                    <Item
-                        key={member.user.id}
-                        channelId={channelId}
-                        member={member}
-                    />
-                ))}
+                <div className='relative flex-1'>
+                    <p className="text-xs font-medium mb-2">Members</p>
+                    {query.isLoading && (
+                        <p className="text-sm text-neutral-400">Loading...</p>
+                    )}
+                    {query.data?.map((member) => (
+                        <Item
+                            key={member.user.id}
+                            channelId={channelId}
+                            member={member}
+                        />
+                    ))}
 
-                <div className='flex flex-col mt-4'>
-                    <Invite channelId={channelId}/>
-                    {features.delete && <DeleteGroup channelId={channelId} name={channel.name}/>}
+                    <div className='flex flex-col mt-4'>
+                        {features.edit && <EditInfo channel={channel}/>}
+                        <Invite channelId={channelId}/>
+                        {features.delete && <DeleteGroup channelId={channelId} name={channel.name}/>}
+                    </div>
                 </div>
             </DialogContent>}
         </Dialog>
     );
+}
+
+function EditInfo({channel}: { channel: Channel }) {
+    const [open, setOpen] = useState(false);
+    const [value, setValue] = useState(channel.name)
+
+    useEffect(() => {
+        setValue(channel.name)
+    }, [channel.name])
+
+    const editMutation = useMutation(
+        (input: API['/api/channels:patch']['input']) => typedFetch('/api/channels:patch', input),
+        {
+            mutateKey: ['/api/channels', undefined],
+            revalidate: false,
+            cache(data, current) {
+                return current?.map(item => item.channel.id === data.id ? {...item, channel: data} : item) ?? []
+            },
+            onSuccess() {
+                setOpen(false)
+            }
+        }
+    )
+
+    return <>
+        <button className={cn(menuButtonVariants())} onClick={() => setOpen(true)}>Edit Info</button>
+        {open &&
+            <form className='absolute inset-0 flex flex-col gap-4 animate-popover-in bg-neutral-900' onSubmit={e => {
+                void editMutation.trigger({name: value, channelId: channel.id})
+                e.preventDefault()
+            }}>
+                <fieldset className='flex flex-col'>
+                    <label htmlFor='name' className='font-medium text-xs mb-2'>Name</label>
+                    <input id='name' value={value} onChange={e => setValue(e.target.value)}
+                           className={cn(inputVariants())}
+                           required/>
+                </fieldset>
+                <div className='flex flex-row gap-2 mt-auto'>
+                    <button type='submit' className={cn(buttonVariants({color: 'primary'}))}
+                            disabled={editMutation.isMutating}>Done
+                    </button>
+                    <button type='button' className={cn(buttonVariants())} onClick={() => setOpen(false)}>Cancel
+                    </button>
+                </div>
+            </form>}
+    </>
 }
 
 function DeleteGroup({channelId, name}: { channelId: string, name: string }) {

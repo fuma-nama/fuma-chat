@@ -6,11 +6,11 @@ import {
     requireUser,
     validate,
 } from "@/lib/server/route-handler";
-import {deleteChannel, postChannel} from "@/lib/server/zod";
+import {deleteChannel, patchChannel, postChannel} from "@/lib/server/zod";
 import {createId} from "@paralleldrive/cuid2";
-import {eq} from "drizzle-orm";
+import {and, eq} from "drizzle-orm";
 import {NextResponse} from "next/server";
-import {Permissions} from "@/lib/server/permissions";
+import {hasPermission, Permissions} from "@/lib/server/permissions";
 
 export const GET = handler<"/api/channels:get">(async () => {
     const {userId} = requireAuth();
@@ -53,6 +53,24 @@ export const POST = handler<"/api/channels:post">(async (req) => {
 
     return NextResponse.json(id);
 });
+
+export const PATCH = handler<'/api/channels:patch'>(async req => {
+    const {userId} = requireAuth()
+    const data = await validate(req, patchChannel)
+
+    const membership = await db.select().from(memberTable).where(and(eq(memberTable.channelId, data.channelId), eq(memberTable.userId, userId))).limit(1).then(res => res[0]);
+
+    if (!membership || !hasPermission(membership.permissions, Permissions.Admin)) return NextResponse.json({
+        message: "Only admins can edit group info",
+        status: 401
+    });
+
+    const updated = await db.update(channelTable).set({name: data.name}).where(eq(channelTable.id, data.channelId)).returning()
+
+    if (updated.length === 0) return NextResponse.json({message: "Channel not found"}, {status: 404})
+
+    return NextResponse.json(updated[0])
+})
 
 export const DELETE = handler<"/api/channels:delete">(async (req) => {
     const {userId} = requireAuth();

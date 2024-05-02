@@ -7,7 +7,7 @@ import {
     getInvite,
     postMessage,
     postChannelJoin,
-    deleteMessage, deleteMember, postInvite,
+    deleteMessage, deleteMember, postInvite, patchChannel,
 } from "./zod";
 
 export interface Realtime {
@@ -93,6 +93,13 @@ export interface POST {
     }
 }
 
+export interface PATCH {
+    "/api/channels": {
+        input: z.infer<typeof patchChannel>
+        data: Channel
+    }
+}
+
 export interface DELETE {
     "/api/channels": {
         input: z.input<typeof deleteChannel>;
@@ -112,6 +119,8 @@ export type API = {
     [K in keyof GET as K extends string ? `${K}:get` : never]: GET[K];
 } & {
     [K in keyof POST as K extends string ? `${K}:post` : never]: POST[K];
+} & {
+    [K in keyof PATCH as K extends string ? `${K}:patch` : never]: PATCH[K];
 } & {
     [K in keyof DELETE as K extends string ? `${K}:delete` : never]: DELETE[K];
 };

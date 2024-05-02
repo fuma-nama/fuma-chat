@@ -5,10 +5,12 @@ import {typedFetch, useQuery} from "@/lib/client/fetcher";
 import {useRef, useState} from "react";
 import {CheckIcon, CopyIcon} from "lucide-react";
 import {useMutation} from "@/lib/client/use-mutation";
-import {useToastStore} from "@/lib/client/store";
+import {useStore, useToastStore} from "@/lib/client/store";
+import {hasPermission, Permissions} from "@/lib/server/permissions";
 
 export function Invite({channelId}: { channelId: string }) {
     const query = useQuery(["/api/invites", {channelId}]);
+    const info = useStore(s => s.getChannel(channelId));
     const [isCopied, setCopied] = useState(false);
     const timerRef = useRef<number>();
 
@@ -26,6 +28,8 @@ export function Invite({channelId}: { channelId: string }) {
             return c
         }
     })
+
+    const canGenerate = hasPermission(info.permissions ?? 0, Permissions.Admin)
 
     const onCopy = () => {
         if (!query.data) return;
@@ -58,10 +62,10 @@ export function Invite({channelId}: { channelId: string }) {
                         {isCopied ? <CheckIcon className='size-4'/> : <CopyIcon className='size-4'/>}
                     </button>
                 </div>
-                <button onClick={() => mutation.trigger()}
-                        className={cn(buttonVariants({color: 'primary', className: 'w-full'}))}
-                        disabled={mutation.isMutating}>Generate
-                </button>
+                {canGenerate && <button onClick={() => mutation.trigger()}
+                                        className={cn(buttonVariants({color: 'primary', className: 'w-full'}))}
+                                        disabled={mutation.isMutating}>Generate
+                </button>}
             </PopoverContent>
         </Popover>
     );
