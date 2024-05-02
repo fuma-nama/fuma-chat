@@ -1,4 +1,4 @@
-import {channelTable, inviteTable, memberTable} from "@/lib/database/schema";
+import {inviteTable, memberTable} from "@/lib/database/schema";
 import {db} from "@/lib/server/db";
 import {handler, requireAuth, validate} from "@/lib/server/route-handler";
 import {getInvite, postInvite} from "@/lib/server/zod";

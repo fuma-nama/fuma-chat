@@ -39,6 +39,14 @@ export interface Message {
 export interface Channel {
     id: string;
     name: string;
+    ownerId: string
+}
+
+export interface ChannelWithMember {
+    channel: Channel
+    member: {
+        permissions: number
+    }
 }
 
 export interface GET {
@@ -48,7 +56,7 @@ export interface GET {
     };
     "/api/channels": {
         input: undefined;
-        data: Channel[];
+        data: ChannelWithMember[];
     };
     "/api/members": {
         input: z.input<typeof getMembers>;

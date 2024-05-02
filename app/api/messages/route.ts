@@ -112,7 +112,7 @@ export const DELETE = handler<"/api/messages:delete">(async (req) => {
         );
 
     const message = await db
-        .select()
+        .select({userId: messageTable.userId})
         .from(messageTable)
         .where(
             and(

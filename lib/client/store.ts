@@ -1,6 +1,6 @@
 import type Pusher from "pusher-js";
 import {create} from "zustand";
-import {Message} from "../server/types";
+import {Channel, Message} from "../server/types";
 
 interface StoreType {
     pusher?: Pusher
@@ -11,25 +11,24 @@ interface StoreType {
 
 interface ChannelInfo {
     messages: Message[]
+    channel?: Channel
+    permissions?: number
+
     pointer?: number
     nextPointer: () => void
     setMessage: (messages: Message[]) => void
     onLoad: (messages: Message[], before?: number) => void
+    update: (channel: ChannelInfo) => void
 }
 
 function emptyChannelInfo(id: string): ChannelInfo {
-    function update(channel: ChannelInfo) {
-        useStore.setState(prev => ({
-            channels: new Map(prev.channels).set(id, channel)
-        }))
-    }
 
     return {
         messages: [],
         setMessage(messages) {
             const channel = useStore.getState().getChannel(id)
 
-            update({
+            channel.update({
                 ...channel,
                 messages
             })
@@ -37,10 +36,15 @@ function emptyChannelInfo(id: string): ChannelInfo {
         nextPointer() {
             const channel = useStore.getState().getChannel(id)
 
-            update({
+            channel.update({
                 ...channel,
                 pointer: channel.messages.length > 0 ? channel.messages[0].timestamp : undefined
             })
+        },
+        update(channel: ChannelInfo) {
+            useStore.setState(prev => ({
+                channels: new Map(prev.channels).set(id, channel)
+            }))
         },
         onLoad(messages, before) {
             const channel = useStore.getState().getChannel(id)
@@ -54,7 +58,7 @@ function emptyChannelInfo(id: string): ChannelInfo {
                 channel.messages = messages
             }
 
-            update({
+            channel.update({
                 ...channel
             })
         }

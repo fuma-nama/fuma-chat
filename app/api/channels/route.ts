@@ -16,15 +16,21 @@ export const GET = handler<"/api/channels:get">(async () => {
     const {userId} = requireAuth();
 
     const result = await db
-        .select({channel: channelTable})
+        .select()
         .from(memberTable)
         .where(eq(memberTable.userId, userId))
         .innerJoin(channelTable, eq(channelTable.id, memberTable.channelId));
 
     return NextResponse.json(
-        result.map(({channel}) => ({
-            id: channel.id,
-            name: channel.name,
+        result.map(({channels, members}) => ({
+            channel: {
+                id: channels.id,
+                name: channels.name,
+                ownerId: channels.ownerId,
+            },
+            member: {
+                permissions: members.permissions
+            }
         }))
     );
 });

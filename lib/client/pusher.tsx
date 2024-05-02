@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import Pusher from "pusher-js";
+import Pusher, {Channel as PusherChannel} from "pusher-js";
 import {useEffect} from "react";
 import {useStore} from "./store";
-import {Realtime} from "../server/types";
+import {ChannelWithMember, Realtime} from "../server/types";
 import {useQuery} from "./fetcher";
 import {useUser} from "@clerk/nextjs";
 
@@ -12,55 +12,65 @@ const appId = process.env.NEXT_PUBLIC_PUSHER_API_KEY!;
 
 export function RealtimeProvider({children}: { children: React.ReactNode }) {
     const auth = useUser();
+    const pusher = useStore(s => s.pusher)
     const query = useQuery(["/api/channels", undefined]);
 
     useEffect(() => {
         const data = query.data;
-        const pusher = useStore.getState().pusher;
-        if (!pusher || !data) return;
+        if (!data) return;
 
         for (const item of data) {
-            const channel = pusher.subscribe(item.id);
-            channel.unbind_all();
+            updateChannel(item)
 
-            channel.bind(
-                "message-send",
-                (data: Realtime["channel"]["message-send"]) => {
-                    const channel = useStore.getState().getChannel(data.channelId)
+            if (pusher) {
+                const cachedChannel = pusher.channels.find(item.channel.id)
+                if (cachedChannel && cachedChannel.subscribed) continue;
 
-                    channel.setMessage([...channel.messages, data])
-                }
-            );
-            channel.bind(
-                "message-delete",
-                (data: Realtime["channel"]["message-delete"]) => {
-                    const channel = useStore.getState().getChannel(data.channelId)
-
-                    channel.setMessage(channel.messages.filter(m => m.id !== data.id))
-                }
-            );
+                const channel = pusher.subscribe(item.channel.id)
+                initChannel(channel)
+            }
         }
-    }, [query.data]);
+    }, [query.data, pusher]);
 
     useEffect(() => {
-        const pusher = useStore.getState().pusher;
         if (pusher || !auth.isSignedIn) return;
 
         const instance = new Pusher(appId, {
             cluster: "us3",
         });
 
-        init(instance);
-
         useStore.setState({pusher: instance});
-    }, [auth]);
+    }, [pusher, auth]);
 
     return <>{children}</>;
 }
 
-function init(pusher: Pusher) {
+function updateChannel(data: ChannelWithMember) {
+    const channel = useStore.getState().getChannel(data.channel.id)
+
+    channel.update({
+        channel: data.channel,
+        permissions: data.member.permissions,
+        ...channel
+    })
 }
 
-export function usePusher(): Pusher | undefined {
-    return useStore((s) => s.pusher);
+function initChannel(pusherChannel: PusherChannel) {
+    pusherChannel.bind(
+        "message-send",
+        (data: Realtime["channel"]["message-send"]) => {
+            const channel = useStore.getState().getChannel(data.channelId)
+
+            channel.setMessage([...channel.messages, data])
+        }
+    );
+
+    pusherChannel.bind(
+        "message-delete",
+        (data: Realtime["channel"]["message-delete"]) => {
+            const channel = useStore.getState().getChannel(data.channelId)
+
+            channel.setMessage(channel.messages.filter(m => m.id !== data.id))
+        }
+    );
 }

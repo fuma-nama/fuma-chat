@@ -7,7 +7,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "../dialog";
-import {Channel, Member} from "@/lib/server/types";
+import {Member} from "@/lib/server/types";
 import {cn} from "@/lib/cn";
 import {buttonVariants, menuButtonVariants} from "../primitive";
 import {typedFetch, useQuery} from "@/lib/client/fetcher";
@@ -16,7 +16,7 @@ import {useRouter} from "next/navigation";
 import Image from "next/image";
 import {useMutation} from "@/lib/client/use-mutation";
 import {Invite} from "./invite";
-import {useToastStore} from "@/lib/client/store";
+import {useStore, useToastStore} from "@/lib/client/store";
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel,
     AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -24,10 +24,19 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger
 } from "@/components/alert-dialog";
+import {useAuth} from "@clerk/nextjs";
 
-export function EditGroup({channel}: { channel: Channel }) {
+export function EditGroup({channelId}: { channelId: string }) {
     const [open, setOpen] = useState(false);
-    const query = useQuery(["/api/members", {channelId: channel.id}]);
+    const info = useStore(s => s.getChannel(channelId))
+    const query = useQuery(["/api/members", {channelId}]);
+    const auth = useAuth()
+
+    const channel = info.channel
+
+    const features = {
+        delete: auth.isLoaded && channel?.ownerId === auth.userId
+    }
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -37,7 +46,7 @@ export function EditGroup({channel}: { channel: Channel }) {
             >
                 <SettingsIcon className="size-4"/>
             </DialogTrigger>
-            <DialogContent>
+            {channel && <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{channel.name}</DialogTitle>
                     <DialogDescription>View chat group details.</DialogDescription>
@@ -49,16 +58,16 @@ export function EditGroup({channel}: { channel: Channel }) {
                 {query.data?.map((member) => (
                     <Item
                         key={member.user.id}
-                        channelId={channel.id}
+                        channelId={channelId}
                         member={member}
                     />
                 ))}
 
                 <div className='flex flex-col mt-4'>
-                    <Invite channelId={channel.id}/>
-                    <DeleteGroup channelId={channel.id} name={channel.name}/>
+                    <Invite channelId={channelId}/>
+                    {features.delete && <DeleteGroup channelId={channelId} name={channel.name}/>}
                 </div>
-            </DialogContent>
+            </DialogContent>}
         </Dialog>
     );
 }
@@ -73,7 +82,7 @@ function DeleteGroup({channelId, name}: { channelId: string, name: string }) {
             mutateKey: ["/api/channels", undefined] as const,
             revalidate: false,
             cache(_, channels = []) {
-                return channels.filter((c) => channelId !== c.id);
+                return channels.filter((c) => channelId !== c.channel.id);
             },
             onSuccess() {
                 setAlert(false)

@@ -7,7 +7,7 @@ import {typedFetch} from "@/lib/client/fetcher";
 import {cn} from "@/lib/cn";
 import {buttonVariants, inputVariants} from "@/components/primitive";
 import Image from "next/image";
-import type {API, Channel, Message} from "@/lib/server/types";
+import type {API, Message} from "@/lib/server/types";
 import {useAuth} from "@clerk/nextjs";
 import {EditGroup} from "@/components/function/edit-group";
 import {useMutation} from "@/lib/client/use-mutation";
@@ -23,14 +23,14 @@ import {ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger} fr
 import {DropdownMenuItemProps} from "@radix-ui/react-dropdown-menu";
 import {ContextMenuItemProps} from "@radix-ui/react-context-menu";
 import {ChatView, useItems} from "@/components/function/chat-view";
+import {hasPermission, Permissions} from "@/lib/server/permissions";
 
-export default function View({channelId, channelInfo}: {
+export default function View({channelId}: {
     channelId: string,
-    channelInfo: Channel;
 }) {
-    const channel = useStore((s) => s.getChannel(channelId));
+    const info = useStore((s) => s.getChannel(channelId));
     const auth = useAuth();
-    const items = useItems(channel.messages)
+    const items = useItems(info.messages)
 
     if (!auth.isLoaded)
         return <p className="m-auto text-sm text-neutral-400">Loading</p>;
@@ -39,8 +39,8 @@ export default function View({channelId, channelInfo}: {
         <ChatView channelId={channelId}>
             <div
                 className="sticky top-0 flex flex-row items-center px-4 bg-neutral-900/50 backdrop-blur-lg min-h-12 z-20 max-md:pl-12">
-                <p className="font-medium text-sm">{channelInfo.name}</p>
-                <EditGroup channel={channelInfo}/>
+                <p className="font-medium text-sm">{info.channel?.name}</p>
+                <EditGroup channelId={channelId}/>
             </div>
             <div className="flex flex-col gap-6 py-4 h-full">
                 {items.map((item) => {
@@ -127,9 +127,10 @@ function Sendbar() {
 function MessageItem({message}: { message: Message }) {
     const auth = useAuth();
     const timeStr = getTimeString(new Date(message.timestamp));
+    const channel = useStore(s => s.getChannel(message.channelId))
 
     const features: Features = {
-        delete: auth.userId === message.user.id
+        delete: auth.userId === message.user.id || hasPermission(channel.permissions ?? 0, Permissions.DeleteMessage) || hasPermission(channel.permissions ?? 0, Permissions.Admin)
     }
 
     if (auth.userId === message.user.id) {
