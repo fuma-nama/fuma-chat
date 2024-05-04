@@ -1,8 +1,8 @@
 import {SVGProps} from "react";
 import {cn} from "@/lib/cn";
 
-export function Spinner(props: SVGProps<SVGSVGElement>) {
-    const width = 5
+export function Spinner({spinnerWidth: width = 5, ...props}: SVGProps<SVGSVGElement> & { spinnerWidth?: number }) {
+
 
     return <svg viewBox='0 0 50 50' role='progressbar' aria-label='Loading'
                 fill='none'

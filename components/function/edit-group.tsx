@@ -28,6 +28,7 @@ import {useAuth} from "@clerk/nextjs";
 import {hasPermission, Permissions} from "@/lib/server/permissions";
 import {Presence} from "@radix-ui/react-presence";
 import {FocusScope} from "@radix-ui/react-focus-scope";
+import {Spinner} from "@/components/spinner";
 
 export function EditGroup({channelId}: { channelId: string }) {
     const [open, setOpen] = useState(false);
@@ -73,9 +74,9 @@ export function EditGroup({channelId}: { channelId: string }) {
 function Members({channelId}: { channelId: string }) {
     const query = useQuery(["/api/members", {channelId}]);
 
-    return <div className='flex flex-col'>
+    return <div className='flex flex-col overflow-auto bg-neutral-800 h-[120px] rounded-lg'>
         {query.isLoading && (
-            <p className="text-sm text-neutral-400">Loading...</p>
+            <Spinner className='size-8 m-auto text-neutral-400'/>
         )}
         {query.data?.map((member) => (
             <Item
@@ -217,7 +218,7 @@ function Item({channelId, member}: { channelId: string, member: Member }) {
     const canKick = info.permissions && hasPermission(info.permissions, Permissions.Admin) && !isOwner && !isUser
 
     return <div
-        className="flex flex-row items-center gap-2 font-medium text-sm p-2 bg-neutral-800 rounded-xl"
+        className="flex flex-row items-center gap-2 font-medium text-sm p-2 rounded-xl hover:bg-neutral-700"
     >
         <Image
             alt="avatar"
