@@ -1,7 +1,6 @@
 import {memberTable, messageTable} from "@/lib/database/schema";
 import {db} from "@/lib/server/db";
-import {pusher} from "@/lib/server/pusher";
-import type {Realtime} from "@/lib/server/types";
+import {sendChannel} from "@/lib/server/pusher";
 import {createId} from "@paralleldrive/cuid2";
 import {NextResponse} from "next/server";
 import {
@@ -77,24 +76,25 @@ export const POST = handler<"/api/messages:post">(async (req) => {
 
     const id = createId();
 
-    await db.insert(messageTable).values({
-        id,
-        userId: user.id,
-        channelId: data.channelId,
-        content: data.message,
-    });
-
-    await pusher.trigger(data.channelId, "message-send", {
-        id,
-        user: {
-            id: user.id,
-            imageUrl: user.imageUrl,
-            name: `${user.firstName} ${user.lastName}`,
-        },
-        message: data.message,
-        channelId: data.channelId,
-        timestamp: Date.now(),
-    } satisfies Realtime["channel"]["message-send"]);
+    await Promise.all([
+        db.insert(messageTable).values({
+            id,
+            userId: user.id,
+            channelId: data.channelId,
+            content: data.message,
+        }),
+        sendChannel(data.channelId, 'message-send', {
+            id,
+            user: {
+                id: user.id,
+                imageUrl: user.imageUrl,
+                name: `${user.firstName} ${user.lastName}`,
+            },
+            message: data.message,
+            channelId: data.channelId,
+            timestamp: Date.now(),
+        })
+    ])
 
     return NextResponse.json(id);
 });
@@ -136,10 +136,10 @@ export const DELETE = handler<"/api/messages:delete">(async (req) => {
 
     await Promise.all([
         db.delete(messageTable).where(eq(messageTable.id, body.id)),
-        pusher.trigger(body.channelId, "message-delete", {
+        sendChannel(body.channelId, "message-delete", {
             id: body.id,
             channelId: body.channelId,
-        } satisfies Realtime["channel"]["message-delete"])
+        })
     ])
 
     return NextResponse.json({message: "Successful"});

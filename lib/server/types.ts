@@ -14,6 +14,7 @@ export interface Realtime {
     channel: {
         "message-send": Message;
         "message-delete": { id: string, channelId: string };
+        "channel-delete": { channelId: string }
     };
     user: {
         "channel-join": ChannelWithMember
@@ -79,14 +80,12 @@ export interface POST {
     };
     "/api/channels": {
         input: z.infer<typeof postChannel>;
-        data: string;
+        data: ChannelWithMember;
     };
     "/api/channels/join": {
         input: z.infer<typeof postChannelJoin>;
-        /**
-         * Channel Id
-         */
-        data: string;
+
+        data: ChannelWithMember;
     };
     "/api/invites": {
         input: z.infer<typeof postInvite>

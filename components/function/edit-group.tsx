@@ -163,19 +163,14 @@ function LeaveGroup({channelId}: { channelId: string }) {
 
 function DeleteGroup({channelId, name}: { channelId: string, name: string }) {
     const [alert, setAlert] = useState(false)
-    const router = useRouter()
 
     const deleteMutation = useMutation(
         () => typedFetch("/api/channels:delete", {channelId}),
         {
             mutateKey: ["/api/channels", undefined] as const,
             revalidate: false,
-            cache(_, channels = []) {
-                return channels.filter((c) => channelId !== c.channel.id);
-            },
             onSuccess() {
                 setAlert(false)
-                router.push("/channels");
             },
         }
     );

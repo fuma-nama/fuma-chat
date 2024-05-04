@@ -11,6 +11,8 @@ import {createId} from "@paralleldrive/cuid2";
 import {and, eq} from "drizzle-orm";
 import {NextResponse} from "next/server";
 import {hasPermission, Permissions} from "@/lib/server/permissions";
+import {sendChannel, sendUser} from "@/lib/server/pusher";
+import {ChannelWithMember} from "@/lib/server/types";
 
 export const GET = handler<"/api/channels:get">(async () => {
     const {userId} = requireAuth();
@@ -36,22 +38,35 @@ export const GET = handler<"/api/channels:get">(async () => {
 });
 
 export const POST = handler<"/api/channels:post">(async (req) => {
-    const user = await requireUser();
-    const data = await validate(req, postChannel);
+    const auth = requireAuth();
+    const body = await validate(req, postChannel);
 
     const id = createId();
-    await db.insert(channelTable).values({
-        id,
-        name: data.name,
-        ownerId: user.id,
-    });
-    await db.insert(memberTable).values({
-        channelId: id,
-        userId: user.id,
-        permissions: Permissions.Admin
-    });
+    const data: ChannelWithMember = {
+        channel: {
+            id,
+            name: body.name,
+            ownerId: auth.userId
+        },
+        member: {
+            permissions: Permissions.Admin
+        }
+    }
+    await Promise.all([
+        db.insert(channelTable).values({
+            id,
+            name: body.name,
+            ownerId: auth.userId,
+        }),
+        db.insert(memberTable).values({
+            channelId: id,
+            userId: auth.userId,
+            permissions: Permissions.Admin
+        }),
+        sendUser(auth.userId, 'channel-join', data)
+    ])
 
-    return NextResponse.json(id);
+    return NextResponse.json(data);
 });
 
 export const PATCH = handler<'/api/channels:patch'>(async req => {
@@ -96,11 +111,14 @@ export const DELETE = handler<"/api/channels:delete">(async (req) => {
         );
     }
 
-    await db.delete(memberTable).where(eq(memberTable.channelId, data.channelId));
-    await db.delete(channelTable).where(eq(channelTable.id, data.channelId));
-    await db
-        .delete(messageTable)
-        .where(eq(messageTable.channelId, data.channelId));
+    await Promise.all([
+        db.delete(memberTable).where(eq(memberTable.channelId, data.channelId)),
+        db.delete(channelTable).where(eq(channelTable.id, data.channelId)),
+        db
+            .delete(messageTable)
+            .where(eq(messageTable.channelId, data.channelId)),
+        sendChannel(data.channelId, 'channel-delete', {channelId: data.channelId})
+    ])
 
     return NextResponse.json({
         message: "successful",
