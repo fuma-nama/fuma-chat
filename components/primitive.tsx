@@ -1,7 +1,7 @@
 import {cva} from "class-variance-authority";
 
 export const buttonVariants = cva(
-    "inline-flex items-center gap-1.5 rounded-lg text-sm font-medium px-4 py-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 disabled:opacity-50 disabled:cursor-not-allowed",
+    "inline-flex items-center justify-center gap-1.5 rounded-lg text-sm font-medium px-4 py-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 disabled:opacity-50 disabled:cursor-not-allowed",
     {
         variants: {
             color: {
@@ -22,7 +22,7 @@ export const buttonVariants = cva(
     }
 );
 
-export const menuButtonVariants = cva(buttonVariants({className: 'text-left py-2 first:rounded-t-lg rounded-none last:rounded-b-lg transition-none data-[state=open]:bg-neutral-700'}), {
+export const menuButtonVariants = cva(buttonVariants({className: 'py-2 justify-start first:rounded-t-lg rounded-none last:rounded-b-lg transition-none data-[state=open]:bg-neutral-700'}), {
     variants: {
         variant: {
             danger: "text-red-500"

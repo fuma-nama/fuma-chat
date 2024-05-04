@@ -3,7 +3,6 @@ import {db} from "@/lib/server/db";
 import {
     handler,
     requireAuth,
-    requireUser,
     validate,
 } from "@/lib/server/route-handler";
 import {deleteChannel, patchChannel, postChannel} from "@/lib/server/zod";
