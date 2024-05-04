@@ -25,7 +25,7 @@ export async function validate<T extends z.AnyZodObject>(
     if (result.success) {
         return result.data;
     }
-    
+
     throw NextResponse.json(
         {
             type: "zod_error",
@@ -70,11 +70,7 @@ export async function requireUser(): Promise<User> {
 }
 
 export function requireAuth(): { userId: string } {
-    const user = auth();
-    if (user.userId) return {userId: user.userId};
+    const user = auth().protect();
 
-    throw NextResponse.json(
-        {message: "You must be logged in to perform this action"},
-        {status: 401}
-    );
+    return {userId: user.userId};
 }
