@@ -7,7 +7,7 @@ import {
     getInvite,
     postMessage,
     postChannelJoin,
-    deleteMessage, deleteMember, postInvite, patchChannel,
+    deleteMessage, deleteMember, postInvite, patchChannel, postChannelLeave,
 } from "./zod";
 
 export interface Realtime {
@@ -15,6 +15,10 @@ export interface Realtime {
         "message-send": Message;
         "message-delete": { id: string, channelId: string };
     };
+    user: {
+        "channel-join": ChannelWithMember
+        "channel-leave": { channelId: string }
+    }
 }
 
 export interface User {
@@ -89,6 +93,11 @@ export interface POST {
         /**
          * New invite code
          */
+        data: string
+    }
+    "/api/channels/leave": {
+        input: z.input<typeof postChannelLeave>
+
         data: string
     }
 }

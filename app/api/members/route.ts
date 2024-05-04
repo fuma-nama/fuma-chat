@@ -48,6 +48,9 @@ export const DELETE = handler<'/api/members:delete'>(async req => {
     const {userId} = requireAuth()
     const data = await validate(req, deleteMember)
 
+    if (data.memberId === userId)
+        return NextResponse.json({message: "You should not kick yourself :)"}, {status: 401});
+
     const channel = await db.select()
         .from(channelTable)
         .where(eq(channelTable.id, data.channelId))

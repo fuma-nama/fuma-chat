@@ -49,3 +49,7 @@ export const patchChannel = z.strictObject({
     channelId: z.string(),
     name: z.string().min(1).max(255),
 })
+
+export const postChannelLeave = z.strictObject({
+    channelId: z.string(),
+})
