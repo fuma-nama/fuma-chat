@@ -1,11 +1,11 @@
 "use client";
 
-import {ChevronDownIcon, SendIcon} from "lucide-react";
-import {ReactNode, useCallback, useState} from "react";
+import {ChevronDownIcon, EditIcon, SendIcon, XIcon} from "lucide-react";
+import {ReactNode, useCallback, useEffect, useRef, useState} from "react";
 import {useStore} from "@/lib/client/store";
 import {typedFetch} from "@/lib/client/fetcher";
 import {cn} from "@/lib/cn";
-import {buttonVariants, inputVariants} from "@/components/primitive";
+import {buttonVariants} from "@/components/primitive";
 import Image from "next/image";
 import type {API, Message} from "@/lib/server/types";
 import {useAuth} from "@clerk/nextjs";
@@ -25,6 +25,7 @@ import {ContextMenuItemProps} from "@radix-ui/react-context-menu";
 import {ChatView, useItems} from "@/components/function/chat-view";
 import {hasPermission, Permissions} from "@/lib/server/permissions";
 import {Spinner} from "@/components/spinner";
+import {DynamicTextArea} from "@/components/text-area";
 
 export default function View({channelId}: {
     channelId: string,
@@ -86,35 +87,15 @@ function Sendbar() {
 
     return (
         <div className="sticky bottom-0 flex flex-row bg-neutral-900/50 px-4 pb-4 gap-2 backdrop-blur-lg">
-            <div className="grid flex-1 max-h-[20vh] overflow-auto *:col-[1/2] *:row-[1/2]">
-                <div
-                    className={cn(
-                        inputVariants({
-                            className: "whitespace-pre-wrap invisible overflow-hidden",
-                            variant: "rounded",
-                        })
-                    )}
-                >
-                    {text + " "}
-                </div>
-                <textarea
-                    value={text}
-                    disabled={mutation.isMutating}
-                    onChange={(e) => setText(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                            mutation.trigger({message: text});
-                            e.preventDefault();
-                        }
-                    }}
-                    className={cn(
-                        inputVariants({
-                            className: "resize-none",
-                            variant: "rounded",
-                        })
-                    )}
-                />
-            </div>
+            <DynamicTextArea className="flex-1 max-h-[20vh]" value={text}
+                             disabled={mutation.isMutating}
+                             onChange={(e) => setText(e.target.value)}
+                             onKeyDown={(e) => {
+                                 if (e.key === "Enter" && !e.shiftKey) {
+                                     mutation.trigger({message: text});
+                                     e.preventDefault();
+                                 }
+                             }}/>
             <button
                 aria-label="send message"
                 className="size-9 bg-blue-500 font-medium text-sm text-nuetral-50 rounded-full p-2.5 mt-2 transition-colors hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -131,9 +112,15 @@ function MessageItem({message}: { message: Message }) {
     const auth = useAuth();
     const timeStr = getTimeString(new Date(message.timestamp));
     const channel = useStore(s => s.getChannel(message.channelId))
+    const isEditing = channel.editing?.id === message.id
 
     const features: Features = {
+        edit: auth.userId === auth.userId,
         delete: auth.userId === message.user.id || hasPermission(channel.permissions ?? 0, Permissions.DeleteMessage) || hasPermission(channel.permissions ?? 0, Permissions.Admin)
+    }
+
+    if (isEditing) {
+        return <EditMessage id={message.id} channelId={message.channelId} content={message.message}/>
     }
 
     if (auth.userId === message.user.id) {
@@ -175,6 +162,70 @@ function MessageItem({message}: { message: Message }) {
     )
 }
 
+function EditMessage({id, channelId, content}: { id: string, channelId: string, content: string }) {
+    const ref = useRef<HTMLDivElement>(null)
+    const [value, setValue] = useState(content)
+    const mutation = useMutation(() => typedFetch('/api/messages:patch', {messageId: id, channelId, content: value}), {
+        mutateKey: ['/api/messages', undefined],
+        revalidate: false,
+        onSuccess() {
+            onCancel()
+        }
+    })
+
+    useEffect(() => {
+        const element = ref.current
+        if (!element) return;
+
+        const textarea = element.getElementsByTagName('textarea').item(0)
+        if (textarea) {
+            textarea.focus()
+
+            textarea.selectionStart = textarea.selectionEnd = textarea.value.length
+        }
+    }, [])
+
+    const onCancel = useCallback(() => {
+        const channel = useStore.getState().getChannel(channelId)
+        channel.update({
+            ...channel,
+            editing: undefined
+        })
+    }, [channelId])
+
+    return <div
+        ref={ref}
+        className='flex flex-col items-end ms-auto me-4 w-[calc(100%-2rem)] rounded-xl border border-blue-500/50 shadow-lg shadow-blue-500/30 p-2 md:w-[70%]'>
+        <p className='text-xs text-neutral-400 w-full p-2'>Editing...</p>
+        <DynamicTextArea
+            value={value}
+            onChange={e => setValue(e.target.value)}
+            className='w-full max-h-[30vh]'
+            onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    mutation.trigger()
+                    e.preventDefault();
+                }
+                if (e.key === 'Escape') {
+                    onCancel()
+                    e.preventDefault()
+                }
+            }}/>
+        <div className='flex flex-row gap-2 mt-2'>
+            <button aria-label='Edit' onClick={() => mutation.trigger()}
+                    className={cn(buttonVariants({size: 'icon', color: 'primary'}))}
+                    disabled={mutation.isMutating}>
+                <EditIcon className='size-4'/>
+            </button>
+            <button aria-label='Cancel' onClick={onCancel}
+                    className={cn(buttonVariants({size: 'icon'}))}
+                    disabled={mutation.isMutating}>
+                <XIcon className='size-4'/>
+            </button>
+        </div>
+    </div>
+}
+
 function MessageActionsTrigger() {
     return <DropdownMenuTrigger
         className={cn(
@@ -190,6 +241,7 @@ function MessageActionsTrigger() {
 }
 
 interface Features {
+    edit: boolean
     delete: boolean
 }
 
@@ -211,15 +263,31 @@ function MessageActions({message, features, children}: { message: Message, featu
         {key: 'copy', children: "Copy", onSelect: onCopy},
     ]
 
+    if (features.edit) {
+        items.push({
+            key: 'edit',
+            children: 'Edit',
+            onSelect() {
+                const channel = useStore.getState().getChannel(message.channelId)
+
+                channel.update({
+                    ...channel,
+                    editing: message
+                })
+            }
+        })
+    }
+
     if (features.delete) items.push({
         key: 'delete',
         children: "Delete",
         disabled: mutation.isMutating,
-        onSelect: () =>
+        onSelect() {
             mutation.trigger({
                 id: message.id,
                 channelId: message.channelId,
-            }),
+            })
+        }
     })
 
     return <DropdownMenu>

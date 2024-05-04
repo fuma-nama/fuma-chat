@@ -9,7 +9,7 @@ import {
     requireUser,
     validate,
 } from "@/lib/server/route-handler";
-import {deleteMessage, getMessages, postMessage} from "@/lib/server/zod";
+import {deleteMessage, getMessages, patchMessage, postMessage} from "@/lib/server/zod";
 import {and, desc, eq, lt, SQLWrapper} from "drizzle-orm";
 import {clerkClient} from "@clerk/nextjs/server";
 import {hasPermission, Permissions} from "@/lib/server/permissions";
@@ -144,3 +144,21 @@ export const DELETE = handler<"/api/messages:delete">(async (req) => {
 
     return NextResponse.json({message: "Successful"});
 });
+
+export const PATCH = handler<'/api/messages:patch'>(async req => {
+    const auth = requireAuth()
+    const body = await validate(req, patchMessage)
+
+    const result = await db.update(messageTable).set({
+        content: body.content
+    }).where(and(eq(messageTable.channelId, body.channelId), eq(messageTable.id, body.messageId), eq(messageTable.userId, auth.userId)))
+
+    if (result.rowCount === 0) return NextResponse.json({message: "No permission"}, {status: 401})
+
+    await sendChannel(body.channelId, 'message-update', {
+        id: body.messageId,
+        channelId: body.channelId,
+        content: body.content
+    })
+    return NextResponse.json({message: "Successful"})
+})

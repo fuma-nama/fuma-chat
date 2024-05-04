@@ -126,6 +126,19 @@ function initChannel(pusherChannel: PusherChannel) {
         }
     );
 
+    bindChannel(
+        pusherChannel,
+        "message-update",
+        (data) => {
+            const channel = useStore.getState().getChannel(data.channelId)
+
+            channel.setMessage(channel.messages.map(item => item.id === data.id ? {
+                ...item,
+                message: data.content
+            } : item))
+        }
+    );
+
     bindChannel(pusherChannel, 'channel-delete', (data) => {
         void mutate<API['/api/channels:get']['data']>(['/api/channels', undefined], (channels = []) => {
             return channels.filter(c => c.channel.id !== data.channelId)

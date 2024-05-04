@@ -7,13 +7,14 @@ import {
     getInvite,
     postMessage,
     postChannelJoin,
-    deleteMessage, deleteMember, postInvite, patchChannel, postChannelLeave,
+    deleteMessage, deleteMember, postInvite, patchChannel, postChannelLeave, patchMessage,
 } from "./zod";
 
 export interface Realtime {
     channel: {
         "message-send": Message;
         "message-delete": { id: string, channelId: string };
+        "message-update": { id: string, channelId: string, content: string }
         "channel-delete": { channelId: string }
     };
     user: {
@@ -105,6 +106,10 @@ export interface PATCH {
     "/api/channels": {
         input: z.infer<typeof patchChannel>
         data: Channel
+    }
+    "/api/messages": {
+        input: z.input<typeof patchMessage>
+        data: { message: string }
     }
 }
 

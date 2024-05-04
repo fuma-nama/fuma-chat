@@ -14,6 +14,12 @@ interface ChannelInfo {
     channel?: Channel
     permissions?: number
 
+    /**
+     * The current editing message, content might not be up-to-date.
+     * Message id won't be changed anyway
+     */
+    editing?: Message
+
     pointer?: number
     nextPointer: () => void
     setMessage: (messages: Message[]) => void

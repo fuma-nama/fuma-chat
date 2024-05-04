@@ -53,3 +53,9 @@ export const patchChannel = z.strictObject({
 export const postChannelLeave = z.strictObject({
     channelId: z.string(),
 })
+
+export const patchMessage = z.strictObject({
+    channelId: z.string(),
+    messageId: z.string(),
+    content: z.string().trim().min(1).max(2000),
+})
