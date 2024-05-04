@@ -37,7 +37,8 @@ export function ChatView({channelId, children}: { channelId: string, children: R
         onScrollRef.current?.()
     }, [])
 
-    return <div ref={containerRef} className='relative flex flex-col-reverse overflow-auto h-full' onScroll={onScroll}>
+    return <div ref={containerRef} className='group/chat relative flex flex-col-reverse overflow-auto h-full'
+                onScroll={onScroll} data-loading={query.isLoading}>
         <div className='flex flex-col flex-1'>
             {children}
         </div>

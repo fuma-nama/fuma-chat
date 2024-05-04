@@ -24,6 +24,7 @@ import {DropdownMenuItemProps} from "@radix-ui/react-dropdown-menu";
 import {ContextMenuItemProps} from "@radix-ui/react-context-menu";
 import {ChatView, useItems} from "@/components/function/chat-view";
 import {hasPermission, Permissions} from "@/lib/server/permissions";
+import {Spinner} from "@/components/spinner";
 
 export default function View({channelId}: {
     channelId: string,
@@ -43,6 +44,7 @@ export default function View({channelId}: {
                 <EditGroup channelId={channelId}/>
             </div>
             <div className="flex flex-col gap-6 py-4 h-full">
+                <Spinner className='hidden group-data-[loading=true]/chat:block mx-auto my-4'/>
                 {items.map((item) => {
                     if (item.type === 'message')
                         return <MessageItem key={item.message.id} message={item.message}/>
@@ -55,7 +57,8 @@ export default function View({channelId}: {
                         </div>
                 })}
                 {items.length === 0 &&
-                    <div className='text-center text-sm text-neutral-400 mt-8'>No message here</div>}
+                    <div className='text-center text-sm text-neutral-400 mt-8 group-data-[loading=true]/chat:hidden'>No
+                        message here</div>}
             </div>
             <Sendbar/>
         </ChatView>
