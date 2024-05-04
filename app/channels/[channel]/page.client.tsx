@@ -130,7 +130,7 @@ function MessageItem({message}: { message: Message }) {
                     className="relative flex flex-row gap-3 items-end ms-auto me-4 max-w-[70%] rounded-xl bg-neutral-800 p-2 group">
                     <MessageActionsTrigger/>
                     <p className="text-sm whitespace-pre-wrap">{message.message}</p>
-                    <p className="text-xs text-neutral-400">{timeStr}</p>
+                    <p className="text-xs text-neutral-400 text-nowrap">{timeStr}</p>
                 </div>
             </MessageActions>
         );
