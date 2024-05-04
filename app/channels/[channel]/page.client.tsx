@@ -44,7 +44,7 @@ export default function View({channelId}: {
                 <p className="font-medium text-sm">{info.channel?.name}</p>
                 <EditGroup channelId={channelId}/>
             </div>
-            <div className="flex flex-col gap-6 py-4 h-full">
+            <div className="flex flex-col gap-6 p-4 h-full">
                 <Spinner className='hidden group-data-[loading=true]/chat:block mx-auto my-4'/>
                 {items.map((item) => {
                     if (item.type === 'message')
@@ -61,12 +61,12 @@ export default function View({channelId}: {
                     <div className='text-center text-sm text-neutral-400 mt-8 group-data-[loading=true]/chat:hidden'>No
                         message here</div>}
             </div>
-            <Sendbar/>
+            <SendMessage/>
         </ChatView>
     );
 }
 
-function Sendbar() {
+function SendMessage() {
     const [text, setText] = useState("");
 
     const params = useParams() as { channel: string };
@@ -127,7 +127,7 @@ function MessageItem({message}: { message: Message }) {
         return (
             <MessageActions message={message} features={features}>
                 <div
-                    className="relative flex flex-row gap-3 items-end ms-auto me-4 max-w-[70%] rounded-xl bg-neutral-800 p-2 group">
+                    className="relative flex flex-row gap-3 items-end ms-auto max-w-[500px] rounded-xl bg-neutral-800 p-2 group">
                     <MessageActionsTrigger/>
                     <p className="text-sm whitespace-pre-wrap">{message.message}</p>
                     <p className="text-xs text-neutral-400 text-nowrap">{timeStr}</p>
@@ -137,7 +137,7 @@ function MessageItem({message}: { message: Message }) {
     }
 
     return (
-        <div className="relative flex flex-row gap-2 ms-4 max-w-[70%]">
+        <div className="relative flex flex-row gap-2 max-w-[70%]">
             <Image
                 alt="avatar"
                 src={message.user.imageUrl}
@@ -195,7 +195,7 @@ function EditMessage({id, channelId, content}: { id: string, channelId: string, 
 
     return <div
         ref={ref}
-        className='flex flex-col items-end ms-auto me-4 w-[calc(100%-2rem)] rounded-xl border border-blue-500/50 shadow-lg shadow-blue-500/30 p-2 md:w-[70%]'>
+        className='flex flex-col items-end ms-auto w-full rounded-xl border border-blue-500/50 shadow-lg shadow-blue-500/30 p-2 md:max-w-[500px]'>
         <p className='text-xs text-neutral-400 w-full p-2'>Editing...</p>
         <DynamicTextArea
             value={value}
