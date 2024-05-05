@@ -7,15 +7,7 @@ export interface Config<K extends keyof GET, Data, ErrorType> {
     /**
      * The key to mutate (SWR)
      */
-    mutateKey: [K, GET[K]["input"] | undefined];
-
-    /**
-     * Customise the process of mutation
-     */
-    mutate?: (
-        key: [K, GET[K]["input"] | undefined],
-        data: Data
-    ) => void | Promise<void>;
+    mutateKey: [K, GET[K]["input"]];
 
     /**
      * Populate the cache
@@ -30,8 +22,20 @@ export interface Config<K extends keyof GET, Data, ErrorType> {
      */
     revalidate?: boolean;
 
-    onSuccess?: (data: Data, key: [K, GET[K]["input"] | undefined]) => void;
-    onError?: (error: ErrorType, key: [K, GET[K]["input"] | undefined]) => void;
+    onSuccess?: (data: Data, key: [K, GET[K]["input"]]) => void;
+    onError?: (error: ErrorType, key: [K, GET[K]["input"]]) => void;
+}
+
+export interface ActionConfig<Data, ErrorType> {
+    /**
+     * Customise the process of mutation
+     */
+    mutate?: (
+        data: Data
+    ) => void | Promise<void>;
+
+    onSuccess?: (data: Data, key?: undefined) => void;
+    onError?: (error: ErrorType, key?: undefined) => void;
 }
 
 export interface UseMutation<Params, ErrorType> {
@@ -51,6 +55,33 @@ export function useMutation<
     action: (params: Params) => Promise<Data>,
     config: Config<K, Data, ErrorType>
 ): UseMutation<Params, ErrorType> {
+
+    return useAction(action, {
+        async mutate(data) {
+            await swrMutate<GET[K]["data"], Data>(config.mutateKey, data, {
+                revalidate: config.revalidate ?? true,
+                populateCache: config.cache,
+            });
+
+            config.onSuccess?.(data, config.mutateKey);
+        },
+        onError(err) {
+            config.onError?.(err, config.mutateKey);
+        },
+        onSuccess(data) {
+            config.onSuccess?.(data, config.mutateKey);
+        }
+    })
+}
+
+export function useAction<
+    Params = undefined,
+    Data = unknown,
+    ErrorType = FetcherError<Params>
+>(
+    action: (params: Params) => Promise<Data>,
+    config: ActionConfig<Data, ErrorType> = {}
+): UseMutation<Params, ErrorType> {
     const actionRef = useRef(action);
     const configRef = useRef(config);
     const pending = useRef(false);
@@ -65,33 +96,19 @@ export function useMutation<
         setIsMutating(pending.current);
         setError(undefined);
 
-        const {
-            mutateKey,
-            revalidate = true,
-            cache,
-            mutate,
-            onError,
-            onSuccess,
-        } = configRef.current;
+        const options = configRef.current;
 
         actionRef
             .current(params)
             .then(async (result) => {
-                if (mutate) {
-                    await mutate(mutateKey, result);
-                } else {
-                    await swrMutate<GET[K]["data"], Data>(mutateKey, result, {
-                        revalidate,
-                        populateCache: cache,
-                    });
-                }
-
-                onSuccess?.(result, mutateKey);
+                await options.mutate?.(result)
+                options.onSuccess?.(result);
                 setError(undefined);
             })
             .catch((err) => {
                 const parsedError = parseError(err) as ErrorType;
-                onError?.(parsedError, mutateKey);
+
+                options.onError?.(parsedError);
                 setError(parsedError);
             })
             .finally(() => {

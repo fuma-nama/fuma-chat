@@ -10,8 +10,7 @@ import Image from "next/image";
 import type {API, Message} from "@/lib/server/types";
 import {useAuth} from "@clerk/nextjs";
 import {EditGroup} from "@/components/function/edit-group";
-import {useMutation} from "@/lib/client/use-mutation";
-import {useParams} from "next/navigation";
+import {useAction} from "@/lib/client/use-mutation";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -70,36 +69,31 @@ export default function View({channelId}: {
 function SendMessage({channelId}: { channelId: string }) {
     const [text, setText] = useState("");
 
-    const mutation = useMutation(
-        async ({message}: { message: string }) => {
+    const mutation = useAction(
+        ({message}: { message: string }) => {
             const channel = useStore.getState().getChannel(channelId);
             const pending = channel.addPending(message)
 
-            const result = await typedFetch("/api/messages:post", {
+            return typedFetch("/api/messages:post", {
                 channelId,
                 message,
                 nonce: pending.nonce
             })
-
-            return {pending, result}
-        },
-        {
-            mutateKey: ["/api/messages", {channelId}] as const,
-            revalidate: false,
         }
     );
 
     return (
         <div className="sticky bottom-0 flex flex-row bg-neutral-900/50 px-4 pb-4 gap-2 backdrop-blur-lg">
-            <DynamicTextArea className="flex-1 max-h-[20vh]" value={text}
-                             onChange={(e) => setText(e.target.value)}
-                             onKeyDown={(e) => {
-                                 if (e.key === "Enter" && !e.shiftKey) {
-                                     mutation.trigger({message: text});
-                                     setText("");
-                                     e.preventDefault();
-                                 }
-                             }}/>
+            <DynamicTextArea
+                className="flex-1 max-h-[20vh]" value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                        mutation.trigger({message: text});
+                        setText("");
+                        e.preventDefault();
+                    }
+                }}/>
             <button
                 aria-label="send message"
                 className="size-9 bg-blue-500 font-medium text-sm text-nuetral-50 rounded-full p-2.5 mt-2 transition-colors hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -178,13 +172,12 @@ function MessageItem({message}: { message: Message }) {
 function EditMessage({id, channelId, content}: { id: string, channelId: string, content: string }) {
     const ref = useRef<HTMLDivElement>(null)
     const [value, setValue] = useState(content)
-    const mutation = useMutation(() => typedFetch('/api/messages:patch', {messageId: id, channelId, content: value}), {
-        mutateKey: ['/api/messages', undefined],
-        revalidate: false,
-        onSuccess() {
-            onCancel()
-        }
-    })
+    const mutation = useAction(
+        () => typedFetch('/api/messages:patch', {messageId: id, channelId, content: value}), {
+            onSuccess() {
+                onCancel()
+            }
+        })
 
     useEffect(() => {
         const element = ref.current
@@ -259,13 +252,9 @@ interface Features {
 }
 
 function MessageActions({message, features, children}: { message: Message, features: Features, children: ReactNode }) {
-    const mutation = useMutation(
+    const mutation = useAction(
         (input: API["/api/messages:delete"]["input"]) =>
             typedFetch("/api/messages:delete", input),
-        {
-            mutateKey: ["/api/messages", undefined],
-            revalidate: false,
-        }
     );
 
     const onCopy = useCallback(() => {

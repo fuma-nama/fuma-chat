@@ -11,7 +11,7 @@ import {
 import {buttonVariants, inputVariants} from "../primitive";
 import {typedFetch} from "@/lib/client/fetcher";
 import {useState} from "react";
-import {useMutation} from "@/lib/client/use-mutation";
+import {useAction} from "@/lib/client/use-mutation";
 
 export function CreateGroup({
                                 open,
@@ -37,14 +37,12 @@ export function CreateGroup({
 
 function Form({close}: { close: () => void }) {
     const [name, setName] = useState("");
-    const mutation = useMutation(
+    const mutation = useAction(
         ({name}: { name: string }) =>
             typedFetch("/api/channels:post", {
                 name,
             }),
         {
-            mutateKey: ["/api/channels", undefined] as const,
-            revalidate: false,
             onSuccess() {
                 close();
             },

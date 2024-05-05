@@ -12,9 +12,8 @@ import {cn} from "@/lib/cn";
 import {buttonVariants, inputVariants, menuButtonVariants} from "../primitive";
 import {typedFetch, useQuery} from "@/lib/client/fetcher";
 import {useEffect, useState} from "react";
-import {useRouter} from "next/navigation";
 import Image from "next/image";
-import {useMutation} from "@/lib/client/use-mutation";
+import {useAction, useMutation} from "@/lib/client/use-mutation";
 import {Invite} from "./invite";
 import {useStore, useToastStore} from "@/lib/client/store";
 import {
@@ -165,11 +164,9 @@ function LeaveGroup({channelId}: { channelId: string }) {
 function DeleteGroup({channelId, name}: { channelId: string, name: string }) {
     const [alert, setAlert] = useState(false)
 
-    const deleteMutation = useMutation(
+    const deleteMutation = useAction(
         () => typedFetch("/api/channels:delete", {channelId}),
         {
-            mutateKey: ["/api/channels", undefined] as const,
-            revalidate: false,
             onSuccess() {
                 setAlert(false)
             },
@@ -202,12 +199,12 @@ function Item({channelId, member}: { channelId: string, member: Member }) {
     const info = useStore(s => s.getChannel(channelId))
     const auth = useAuth()
     const mutation = useMutation(() => typedFetch('/api/members:delete', {memberId: member.user.id, channelId}), {
-        mutateKey: ['/api/members', {channelId,}],
-        onError(e) {
+        mutateKey: ['/api/members', {channelId}] as const,
+        onError(error) {
             useToastStore.getState().addToast({
                 type: 'destructive',
                 title: "Failed to kick member",
-                description: e.message,
+                description: error.message,
             })
         }
     })
