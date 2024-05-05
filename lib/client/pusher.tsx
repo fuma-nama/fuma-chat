@@ -112,7 +112,11 @@ function initChannel(pusherChannel: PusherChannel) {
         (data) => {
             const channel = useStore.getState().getChannel(data.channelId)
 
-            channel.setMessage([...channel.messages, data])
+            channel.update({
+                ...channel,
+                messages: [...channel.messages, data],
+                pending: channel.pending.filter(item => item.nonce !== data.nonce)
+            })
         }
     );
 
@@ -122,7 +126,12 @@ function initChannel(pusherChannel: PusherChannel) {
         (data) => {
             const channel = useStore.getState().getChannel(data.channelId)
 
-            channel.setMessage(channel.messages.filter(m => m.id !== data.id))
+            channel.update(
+                {
+                    ...channel,
+                    messages: channel.messages.filter(m => m.id !== data.id)
+                }
+            )
         }
     );
 
@@ -132,10 +141,13 @@ function initChannel(pusherChannel: PusherChannel) {
         (data) => {
             const channel = useStore.getState().getChannel(data.channelId)
 
-            channel.setMessage(channel.messages.map(item => item.id === data.id ? {
-                ...item,
-                message: data.content
-            } : item))
+            channel.update({
+                ...channel,
+                messages: channel.messages.map(item => item.id === data.id ? {
+                    ...item,
+                    message: data.content
+                } : item)
+            })
         }
     );
 

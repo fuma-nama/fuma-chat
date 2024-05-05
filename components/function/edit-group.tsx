@@ -55,7 +55,7 @@ export function EditGroup({channelId}: { channelId: string }) {
                     <DialogTitle>{channel.name}</DialogTitle>
                     <DialogDescription>View chat group details.</DialogDescription>
                 </DialogHeader>
-                <div className='relative flex-1'>
+                <div className='relative flex-1 max-h-[50vh] overflow-auto'>
                     <p className="text-xs font-medium mb-2">Members</p>
                     <Members channelId={channelId}/>
 
@@ -116,7 +116,7 @@ function EditInfo({channel}: { channel: Channel }) {
             <FocusScope trapped asChild>
                 <form
                     data-state={open ? 'open' : 'closed'}
-                    className='absolute inset-0 flex flex-col gap-4 bg-neutral-900 data-[state=open]:animate-popover-in data-[state=closed]:animate-popover-out'
+                    className='absolute inset-0 flex flex-col gap-4 bg-neutral-900 data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out'
                     onSubmit={e => {
                         void editMutation.trigger({name: value, channelId: channel.id})
                         e.preventDefault()

@@ -13,8 +13,8 @@ export const POST = handler<'/api/channels/leave:post'>(async req => {
     const group = await db.select().from(channelTable).where(eq(channelTable.id, body.channelId)).limit(1).then(res => res[0])
 
     if (group && group.ownerId === auth.userId)
-        return NextResponse.json({message: "Group owner cannot leave the group"}, {status: 404})
-    
+        return NextResponse.json({message: "Group owner cannot leave the group"}, {status: 400})
+
     const result = await db.delete(memberTable).where(and(eq(memberTable.channelId, body.channelId), eq(memberTable.userId, auth.userId)))
 
     if (result.rowCount === 0)

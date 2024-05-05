@@ -2,7 +2,7 @@
 
 import {ChevronDownIcon, EditIcon, SendIcon, XIcon} from "lucide-react";
 import {ReactNode, useCallback, useEffect, useRef, useState} from "react";
-import {useStore} from "@/lib/client/store";
+import {PendingMessage, useStore} from "@/lib/client/store";
 import {typedFetch} from "@/lib/client/fetcher";
 import {cn} from "@/lib/cn";
 import {buttonVariants} from "@/components/primitive";
@@ -57,30 +57,34 @@ export default function View({channelId}: {
                             {item.date}
                         </div>
                 })}
+                {info.pending.map(item => <PendingMessageItem key={item.nonce} message={item}/>)}
                 {items.length === 0 &&
                     <div className='text-center text-sm text-neutral-400 mt-8 group-data-[loading=true]/chat:hidden'>No
                         message here</div>}
             </div>
-            <SendMessage/>
+            <SendMessage channelId={channelId}/>
         </ChatView>
     );
 }
 
-function SendMessage() {
+function SendMessage({channelId}: { channelId: string }) {
     const [text, setText] = useState("");
 
-    const params = useParams() as { channel: string };
     const mutation = useMutation(
-        ({message}: { message: string }) =>
-            typedFetch("/api/messages:post", {
-                channelId: params.channel,
+        async ({message}: { message: string }) => {
+            const channel = useStore.getState().getChannel(channelId);
+            const pending = channel.addPending(message)
+
+            const result = await typedFetch("/api/messages:post", {
+                channelId,
                 message,
-            }),
+                nonce: pending.nonce
+            })
+
+            return {pending, result}
+        },
         {
-            mutateKey: ["/api/messages", {channelId: params.channel}] as const,
-            onSuccess() {
-                setText("");
-            },
+            mutateKey: ["/api/messages", {channelId}] as const,
             revalidate: false,
         }
     );
@@ -88,24 +92,33 @@ function SendMessage() {
     return (
         <div className="sticky bottom-0 flex flex-row bg-neutral-900/50 px-4 pb-4 gap-2 backdrop-blur-lg">
             <DynamicTextArea className="flex-1 max-h-[20vh]" value={text}
-                             disabled={mutation.isMutating}
                              onChange={(e) => setText(e.target.value)}
                              onKeyDown={(e) => {
                                  if (e.key === "Enter" && !e.shiftKey) {
                                      mutation.trigger({message: text});
+                                     setText("");
                                      e.preventDefault();
                                  }
                              }}/>
             <button
                 aria-label="send message"
                 className="size-9 bg-blue-500 font-medium text-sm text-nuetral-50 rounded-full p-2.5 mt-2 transition-colors hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={mutation.isMutating}
                 onClick={() => mutation.trigger({message: text})}
             >
                 <SendIcon className="size-full"/>
             </button>
         </div>
     );
+}
+
+function PendingMessageItem({message}: { message: PendingMessage }) {
+    const timeStr = getTimeString(new Date(message.timestamp));
+
+    return <div
+        className="relative flex flex-row gap-3 items-end ms-auto max-w-[500px] rounded-xl bg-neutral-800 p-2 opacity-50 cursor-progress">
+        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+        <p className="text-xs text-neutral-400 text-nowrap">{timeStr}</p>
+    </div>
 }
 
 function MessageItem({message}: { message: Message }) {

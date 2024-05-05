@@ -12,7 +12,12 @@ import {
 
 export interface Realtime {
     channel: {
-        "message-send": Message;
+        "message-send": Message & {
+            /**
+             * Only exists in realtime events
+             */
+            nonce?: string
+        };
         "message-delete": { id: string, channelId: string };
         "message-update": { id: string, channelId: string, content: string }
         "channel-delete": { channelId: string }

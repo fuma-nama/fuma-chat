@@ -72,7 +72,7 @@ export const GET = handler<"/api/messages:get">(async (req) => {
 
 export const POST = handler<"/api/messages:post">(async (req) => {
     const user = await requireUser();
-    const data = await validate(req, postMessage);
+    const body = await validate(req, postMessage);
 
     const id = createId();
 
@@ -80,19 +80,20 @@ export const POST = handler<"/api/messages:post">(async (req) => {
         db.insert(messageTable).values({
             id,
             userId: user.id,
-            channelId: data.channelId,
-            content: data.message,
+            channelId: body.channelId,
+            content: body.message,
         }),
-        sendChannel(data.channelId, 'message-send', {
+        sendChannel(body.channelId, 'message-send', {
             id,
             user: {
                 id: user.id,
                 imageUrl: user.imageUrl,
                 name: `${user.firstName} ${user.lastName}`,
             },
-            message: data.message,
-            channelId: data.channelId,
+            message: body.message,
+            channelId: body.channelId,
             timestamp: Date.now(),
+            nonce: body.nonce
         })
     ])
 

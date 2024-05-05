@@ -3,6 +3,7 @@ import {z} from "zod";
 export const postMessage = z.strictObject({
     channelId: z.string().min(1),
     message: z.string().trim().min(1).max(2000),
+    nonce: z.string().max(256).optional()
 });
 
 export const getMessages = z.strictObject({

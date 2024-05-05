@@ -9,10 +9,17 @@ interface StoreType {
     getChannel: (channel: string) => ChannelInfo
 }
 
+export interface PendingMessage {
+    nonce: string
+    content: string
+    timestamp: number
+}
+
 interface ChannelInfo {
     messages: Message[]
     channel?: Channel
     permissions?: number
+    pending: PendingMessage[]
 
     /**
      * The current editing message, content might not be up-to-date.
@@ -22,7 +29,7 @@ interface ChannelInfo {
 
     pointer?: number
     nextPointer: () => void
-    setMessage: (messages: Message[]) => void
+    addPending: (content: string) => PendingMessage
     onLoad: (messages: Message[], before?: number) => void
     update: (channel: ChannelInfo) => void
 }
@@ -31,13 +38,21 @@ function emptyChannelInfo(id: string): ChannelInfo {
 
     return {
         messages: [],
-        setMessage(messages) {
+        pending: [],
+        addPending(content) {
             const channel = useStore.getState().getChannel(id)
+            const pending: PendingMessage = {
+                nonce: Date.now().toString(),
+                content,
+                timestamp: Date.now()
+            }
 
             channel.update({
                 ...channel,
-                messages
+                pending: [...channel.pending, pending]
             })
+
+            return pending
         },
         nextPointer() {
             const channel = useStore.getState().getChannel(id)
