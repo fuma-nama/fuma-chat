@@ -4,6 +4,7 @@ import {sendChannel} from "@/lib/server/pusher";
 import {createId} from "@paralleldrive/cuid2";
 import {NextResponse} from "next/server";
 import {
+    getUsername,
     handler,
     requireAuth,
     requireUser,
@@ -61,7 +62,7 @@ export const GET = handler<"/api/messages:get">(async (req) => {
                 user: {
                     id: message.userId,
                     imageUrl: user.imageUrl,
-                    name: `${user.firstName} ${user.lastName}`,
+                    name: getUsername(user),
                 },
                 message: message.content,
                 timestamp: message.timestamp.getTime(),
@@ -88,7 +89,7 @@ export const POST = handler<"/api/messages:post">(async (req) => {
             user: {
                 id: user.id,
                 imageUrl: user.imageUrl,
-                name: `${user.firstName} ${user.lastName}`,
+                name: getUsername(user),
             },
             message: body.message,
             channelId: body.channelId,

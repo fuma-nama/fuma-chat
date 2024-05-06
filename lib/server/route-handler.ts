@@ -74,3 +74,7 @@ export function requireAuth(): { userId: string } {
 
     return {userId: user.userId};
 }
+
+export function getUsername(user: User): string {
+    return user.fullName ?? (typeof user.publicMetadata.username === 'string' ? user.publicMetadata.username : 'Unknown')
+}

@@ -43,11 +43,13 @@ export default function View({channelId}: {
                 <p className="font-medium text-sm">{info.channel?.name}</p>
                 <EditGroup channelId={channelId}/>
             </div>
-            <div className="flex flex-col gap-6 p-4 h-full">
+            <div className="flex flex-col gap-2 p-4 h-full">
                 <Spinner className='hidden group-data-[loading=true]/chat:block mx-auto my-4'/>
                 {items.map((item) => {
                     if (item.type === 'message')
-                        return <MessageItem key={item.message.id} message={item.message}/>
+                        return <MessageItem
+                            key={item.message.id} message={item.message} start={item.userBlockStart}
+                            end={item.userBlockEnd}/>
                     if (item.type === 'date')
                         return <div
                             key={item.date}
@@ -115,14 +117,14 @@ function PendingMessageItem({message}: { message: PendingMessage }) {
     </div>
 }
 
-function MessageItem({message}: { message: Message }) {
+function MessageItem({message, start, end}: { message: Message, start: boolean, end: boolean }) {
     const auth = useAuth();
     const timeStr = getTimeString(new Date(message.timestamp));
     const channel = useStore(s => s.getChannel(message.channelId))
     const isEditing = channel.editing?.id === message.id
 
     const features: Features = {
-        edit: auth.userId === auth.userId,
+        edit: auth.userId === message.user.id,
         delete: auth.userId === message.user.id || hasPermission(channel.permissions ?? 0, Permissions.DeleteMessage) || hasPermission(channel.permissions ?? 0, Permissions.Admin)
     }
 
@@ -144,21 +146,21 @@ function MessageItem({message}: { message: Message }) {
     }
 
     return (
-        <div className="relative flex flex-row gap-2 max-w-[70%]">
-            <Image
+        <div className={cn("relative flex flex-row gap-2 max-w-[70%]", start && 'mt-4', !end && 'pl-10')}>
+            {end && <Image
                 alt="avatar"
                 src={message.user.imageUrl}
                 width={32}
                 height={32}
                 className="rounded-full size-8 mt-auto flex-shrink-0"
                 unoptimized
-            />
+            />}
             <MessageActions message={message} features={features}>
                 <div className="relative p-2 rounded-xl bg-neutral-800 group">
                     <MessageActionsTrigger/>
-                    <p className="text-xs font-medium text-orange-200 mb-1">
+                    {start && <p className="text-xs font-medium text-orange-200 mb-1">
                         {message.user.name}
-                    </p>
+                    </p>}
                     <div className='flex flex-row gap-3 items-end'>
                         <p className="text-sm whitespace-pre-wrap">{message.message}</p>
                         <p className="text-xs text-neutral-400">{timeStr}</p>

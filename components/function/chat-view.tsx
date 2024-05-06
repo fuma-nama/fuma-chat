@@ -4,7 +4,17 @@ import {useStore} from "@/lib/client/store";
 import {getDateString} from "@/lib/date";
 import type {Message} from "@/lib/server/types";
 
-export type ItemType = { type: 'message', message: Message } | { type: 'date', date: string }
+export type ItemType = {
+    type: 'message', message: Message,
+    /**
+     * Is the start of user's messages
+     */
+    userBlockStart: boolean
+    /**
+     * Is the end of user's messages
+     */
+    userBlockEnd: boolean
+} | { type: 'date', date: string }
 
 export function ChatView({channelId, children}: { channelId: string, children: ReactNode }) {
     const channel = useStore((s) => s.getChannel(channelId));
@@ -47,20 +57,32 @@ export function ChatView({channelId, children}: { channelId: string, children: R
 
 export function useItems(messages: Message[]): ItemType[] {
     return useMemo(() => {
-        const lists: ItemType[] = []
+        const items: ItemType[] = []
         let prevDate: string | undefined = undefined
-        for (const message of messages) {
-            const date = new Date(message.timestamp)
-            const dateStr = getDateString(date)
+
+        for (let i = 0; i < messages.length; i++) {
+            const dateStr = getDateString(new Date(messages[i].timestamp))
 
             if (prevDate !== dateStr) {
-                lists.push({type: 'date', date: dateStr})
+                items.push({type: 'date', date: dateStr})
+                prevDate = dateStr
             }
 
-            lists.push({type: 'message', message})
-            prevDate = dateStr
+            const prevItem = items.length > 0 ? items[items.length - 1] : undefined
+            const inUserBlock = prevItem?.type === 'message' && prevItem.message.user.id === messages[i].user.id
+
+            if (inUserBlock) {
+                prevItem.userBlockEnd = false
+            }
+
+            items.push({
+                type: 'message',
+                message: messages[i],
+                userBlockStart: !inUserBlock,
+                userBlockEnd: true,
+            })
         }
 
-        return lists
+        return items
     }, [messages])
 }

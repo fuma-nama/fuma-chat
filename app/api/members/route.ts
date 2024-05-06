@@ -1,6 +1,6 @@
 import {channelTable, memberTable} from "@/lib/database/schema";
 import {db} from "@/lib/server/db";
-import {handler, requireAuth, validate} from "@/lib/server/route-handler";
+import {getUsername, handler, requireAuth, validate} from "@/lib/server/route-handler";
 import {deleteMember, getMembers} from "@/lib/server/zod";
 import {clerkClient} from "@clerk/nextjs/server";
 import {and, eq} from "drizzle-orm";
@@ -36,7 +36,7 @@ export const GET = handler<"/api/members:get">(async (req) => {
                 user: {
                     id: user.id,
                     imageUrl: user.imageUrl,
-                    name: `${user.firstName} ${user.lastName}`,
+                    name: getUsername(user),
                 },
                 permissions: m.permissions,
             };

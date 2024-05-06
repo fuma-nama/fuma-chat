@@ -212,7 +212,7 @@ function Item({channelId, member}: { channelId: string, member: Member }) {
     const isOwner = info.channel && member.user.id !== info.channel.ownerId
     const isUser = member.user.id === auth.userId
 
-    const canKick = info.permissions && hasPermission(info.permissions, Permissions.Admin) && !isOwner && !isUser
+    const canKick = hasPermission(info.permissions ?? 0, Permissions.Admin) && !isOwner && !isUser
 
     return <div
         className="flex flex-row items-center gap-2 font-medium text-sm p-2 rounded-xl hover:bg-neutral-700"

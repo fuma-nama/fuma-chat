@@ -39,7 +39,7 @@ export function RealtimeProvider({children}: { children: React.ReactNode }) {
                 const name = getChannelName(item.channel.id)
                 const cachedChannel = pusher.channels.find(name)
 
-                if (cachedChannel && cachedChannel.subscribed) continue;
+                if (cachedChannel && (cachedChannel.subscribed || cachedChannel.subscriptionPending)) continue;
                 const channel = pusher.subscribe(name)
                 initChannel(channel)
             }
@@ -106,6 +106,7 @@ function updateChannel(data: ChannelWithMember) {
 }
 
 function initChannel(pusherChannel: PusherChannel) {
+    pusherChannel.unbind_all()
     bindChannel(
         pusherChannel,
         "message-send",
